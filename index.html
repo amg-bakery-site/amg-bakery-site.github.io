@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A.M.G. Bakery & Cafe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo" href="#home" aria-label="A.M.G. Bakery & Cafe">
+        <!-- Placeholder badge logo -->
+        <svg width="72" height="72" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+          <circle cx="50" cy="50" r="48" fill="#8B5E3C" />
+          <path d="M30 58c6-8 18-14 18-14s12 6 18 14" fill="none" stroke="#F5E8D0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+          <text x="50" y="70" font-family="Poppins, sans-serif" font-size="12" fill="#F5E8D0" text-anchor="middle">AMG</text>
+        </svg>
+      </a>
+
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="#home">Home</a>
+        <a href="#menu">Menu</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+        <a href="#order" class="order-link">Order</a>
+      </nav>
+
+      <button class="cart-btn" id="cart-btn" aria-label="Open cart">Cart (<span id="cart-count">0</span>)</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="hero">
+      <div class="container hero-inner">
+        <h1 class="brand">A.M.G. Bakery & Cafe</h1>
+        <p class="tagline">Freshly baked goodness in Pipira Chowk, Birendranagar, Surkhet.</p>
+        <p class="contact-line">Call us: <a href="tel:+9779848551921">9848551921</a> / <a href="tel:+9779826542784">9826542784</a></p>
+        <a href="#menu" class="btn primary">See Our Menu</a>
+        <a href="#order" class="btn outline">Order Now</a>
+      </div>
+    </section>
+
+    <section id="menu" class="section menu">
+      <div class="container">
+        <h2>Our Menu</h2>
+        <p class="muted">Click "Add" to add items to your order. For custom celebration cakes please contact us for pricing.</p>
+        <div id="menu-grid" class="grid"></div>
+      </div>
+    </section>
+
+    <section id="about" class="section about">
+      <div class="container">
+        <h2>About A.M.G. Bakery & Cafe</h2>
+        <p>We sell and provide all related bakery items according to your requirements — from birthday and celebration cakes to everyday breads, buns, muffins, donuts, rolls, and more. We also serve coffee, tea, and ice cream. Freshness, flavor, and friendly service are our promise.</p>
+      </div>
+    </section>
+
+    <section id="order" class="section order">
+      <div class="container">
+        <h2>Your Order</h2>
+        <div class="order-area">
+          <div class="cart" id="cart">
+            <p class="muted">Your cart is empty.</p>
+            <ul id="cart-items" class="cart-list"></ul>
+            <div class="cart-summary" id="cart-summary" hidden>
+              <p>Subtotal: <strong id="cart-subtotal">Rs 0</strong></p>
+            </div>
+          </div>
+
+          <form id="order-form" class="order-form">
+            <h3>Delivery & Contact</h3>
+            <label>Name <input required type="text" name="name" id="cust-name"></label>
+            <label>Phone <input required type="tel" name="phone" id="cust-phone"></label>
+            <label>Address <input type="text" name="address" id="cust-address" placeholder="Delivery address (or leave empty for pickup)"></label>
+            <label>Delivery or Pickup
+              <select name="method" id="cust-method">
+                <option value="delivery">Delivery</option>
+                <option value="pickup">Pickup</option>
+              </select>
+            </label>
+            <label>Any notes <textarea name="notes" id="cust-notes" rows="2" placeholder="e.g., no onions / include extra napkins"></textarea></label>
+
+            <div class="order-actions">
+              <button type="button" id="send-order" class="btn primary">Send Order (Email)</button>
+              <button type="button" id="send-order-online" class="btn primary">Send Order (Submit Online)</button>
+              <button type="button" id="clear-cart" class="btn outline">Clear Cart</button>
+            </div>
+            <p class="muted small">Orders can be sent via your email client or submitted online. Online submissions will be sent to our secure order endpoint; if you prefer to call, use <a href="tel:+9779848551921">9848551921</a>.</p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section contact">
+      <div class="container">
+        <h2>Contact & Location</h2>
+        <p>A.M.G. Bakery & Cafe — Pipira chowk, Birendranagar, Surkhet</p>
+        <p>Phone: <a href="tel:+9779848551921">9848551921</a>, <a href="tel:+9779826542784">9826542784</a></p>
+        <p>Email: <a href="mailto:orders@amg-bakery.com">orders@amg-bakery.com</a></p>
+        <p>Open hours: Always available as per your requirement — contact us to place orders.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>© <strong>A.M.G. Bakery & Cafe</strong> — Pipira chowk, Birendranagar, Surkhet</div>
+      <div>Phone: 9848551921 / 9826542784</div>
+    </div>
+  </footer>
+
+</body>
+</html>
