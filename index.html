@@ -3,112 +3,351 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="A.M.G. Bakery & Cafe - Fresh baked goods and pastries" />
   <title>A.M.G. Bakery & Cafe</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script defer src="script.js"></script>
 </head>
 <body>
+  <!-- HEADER -->
   <header class="site-header">
     <div class="container header-inner">
-      <a class="logo" href="#home" aria-label="A.M.G. Bakery & Cafe">
-        <!-- Placeholder badge logo -->
-        <svg width="72" height="72" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-          <circle cx="50" cy="50" r="48" fill="#8B5E3C" />
-          <path d="M30 58c6-8 18-14 18-14s12 6 18 14" fill="none" stroke="#F5E8D0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
-          <text x="50" y="70" font-family="Poppins, sans-serif" font-size="12" fill="#F5E8D0" text-anchor="middle">AMG</text>
-        </svg>
-      </a>
+      <div class="logo" id="logo-area">
+        <div class="logo-placeholder" id="logo-display">AMG</div>
+        <div>
+          <div style="color:var(--accent);font-weight:700">A.M.G.</div>
+          <div class="logo-label">Bakery & Cafe</div>
+        </div>
+      </div>
 
       <nav class="site-nav" aria-label="Main navigation">
         <a href="#home">Home</a>
-        <a href="#menu">Menu</a>
+        <a href="#cakes">Cakes</a>
+        <a href="#basic-items">Products</a>
+        <a href="#gallery">Gallery</a>
         <a href="#about">About</a>
         <a href="#contact">Contact</a>
-        <a href="#order" class="order-link">Order</a>
+        <a href="#order">Order</a>
       </nav>
 
-      <button class="cart-btn" id="cart-btn" aria-label="Open cart">Cart (<span id="cart-count">0</span>)</button>
+      <input type="text" id="search-input" placeholder="🔍 Search cakes, products..." style="padding:0.6rem 1rem;border:none;border-radius:6px;width:200px;margin-right:1rem">
+
+      <button class="cart-btn" id="cart-btn" aria-label="Open cart">🛒 Cart (<span id="cart-count">0</span>)</button>
     </div>
   </header>
 
+  <!-- LOGO UPLOAD MODAL -->
+  <div class="modal" id="logo-modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="document.getElementById('logo-modal').classList.remove('active')">&times;</span>
+      <h3>Upload Bakery Logo</h3>
+      <p>Choose an image file (PNG, JPG, SVG):</p>
+      <input type="file" id="logo-file" accept="image/*" style="width:100%;padding:0.5rem;margin:1rem 0;border:1px solid var(--border);border-radius:6px">
+      <button class="btn primary" style="width:100%;margin-top:0.5rem" onclick="saveLogo()">Save Logo</button>
+    </div>
+  </div>
+
+  <!-- ADD CAKE MODAL -->
+  <div class="modal" id="add-cake-modal">
+    <div class="modal-content" style="max-width:500px">
+      <span class="modal-close" onclick="document.getElementById('add-cake-modal').classList.remove('active')">&times;</span>
+      <h3>Add New Cake</h3>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Cake Name *</span>
+        <input type="text" id="cake-name" placeholder="e.g., Chocolate Truffle" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Price (Rs) *</span>
+        <input type="number" id="cake-price" placeholder="e.g., 500" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Description (Flavor, Size, etc.)</span>
+        <textarea id="cake-desc" rows="3" placeholder="e.g., Rich chocolate cake, 1kg, Serves 6-8 people, Chocolate mousse filling" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px;font-family:inherit"></textarea>
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Cake Photo</span>
+        <input type="file" id="cake-photo" accept="image/*" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn primary" style="flex:1" onclick="saveCake()">Add Cake</button>
+        <button class="btn outline" style="flex:1" onclick="document.getElementById('add-cake-modal').classList.remove('active')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD PRODUCT MODAL -->
+  <div class="modal" id="add-product-modal">
+    <div class="modal-content" style="max-width:500px">
+      <span class="modal-close" onclick="document.getElementById('add-product-modal').classList.remove('active')">&times;</span>
+      <h3>Add New Product</h3>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Product Name *</span>
+        <input type="text" id="product-name" placeholder="e.g., Bread, Ice Cream, Coffee" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Price (Rs) *</span>
+        <input type="number" id="product-price" placeholder="e.g., 50" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Description (Type, Size, etc.)</span>
+        <textarea id="product-desc" rows="3" placeholder="e.g., Fresh white bread, 400g, Best before 24 hours" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px;font-family:inherit"></textarea>
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Product Photo</span>
+        <input type="file" id="product-photo" accept="image/*" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn primary" style="flex:1" onclick="saveProduct()">Add Product</button>
+        <button class="btn outline" style="flex:1" onclick="document.getElementById('add-product-modal').classList.remove('active')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD GALLERY PHOTO MODAL -->
+  <div class="modal" id="add-gallery-modal">
+    <div class="modal-content" style="max-width:500px">
+      <span class="modal-close" onclick="document.getElementById('add-gallery-modal').classList.remove('active')">&times;</span>
+      <h3>Add Gallery Photo</h3>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Photo Title *</span>
+        <input type="text" id="gallery-title" placeholder="e.g., Store Opening Day, Team at Work, New Cake Display" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Description</span>
+        <textarea id="gallery-desc" rows="3" placeholder="Tell your story... e.g., Our team celebrating the grand opening of A.M.G. Bakery on a beautiful morning!" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px;font-family:inherit"></textarea>
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Photo</span>
+        <input type="file" id="gallery-photo" accept="image/*" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn primary" style="flex:1" onclick="saveGalleryPhoto()">Add Photo</button>
+        <button class="btn outline" style="flex:1" onclick="document.getElementById('add-gallery-modal').classList.remove('active')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <main>
+    <!-- HERO -->
     <section id="home" class="hero">
-      <div class="container hero-inner">
-        <h1 class="brand">A.M.G. Bakery & Cafe</h1>
-        <p class="tagline">Freshly baked goodness in Pipira Chowk, Birendranagar, Surkhet.</p>
-        <p class="contact-line">Call us: <a href="tel:+9779848551921">9848551921</a> / <a href="tel:+9779826542784">9826542784</a></p>
-        <a href="#menu" class="btn primary">See Our Menu</a>
-        <a href="#order" class="btn outline">Order Now</a>
-      </div>
-    </section>
-
-    <section id="menu" class="section menu">
       <div class="container">
-        <h2>Our Menu</h2>
-        <p class="muted">Click "Add" to add items to your order. For custom celebration cakes please contact us for pricing.</p>
-        <div id="menu-grid" class="grid"></div>
+        <h1 class="hero-title">A.M.G. Bakery & Cafe</h1>
+        <p class="tagline">Freshly Baked Goodness Since Opening</p>
+        <p class="contact-line">
+          📍 Pipira chowk, Birendranagar, Surkhet | 
+          📞 <a href="tel:+9779848551921">9848551921</a> / <a href="tel:+9779826542784">9826542784</a>
+        </p>
+        <div style="margin-top:2rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+          <a href="#menu" class="btn primary">Browse Menu</a>
+          <a href="#order" class="btn outline">Order Now</a>
+        </div>
       </div>
     </section>
 
-    <section id="about" class="section about">
+    <!-- CUSTOM CAKES GALLERY -->
+    <section id="cakes" class="section alt-bg">
+      <div class="container">
+        <h2>🎂 Custom Cakes Gallery</h2>
+        <p style="text-align:center;color:var(--muted);margin-bottom:1.5rem">Browse and order custom cakes. Add unlimited cakes with your own photos, prices, and descriptions.</p>
+        
+        <div style="text-align:center;margin-bottom:2rem">
+          <button class="btn primary" onclick="openAddCakeModal()">+ Add New Cake</button>
+        </div>
+        
+        <div id="menu-content" class="grid"></div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS GALLERY -->
+    <section id="basic-items" class="section">
+      <div class="container">
+        <h2>Other Bakery Products</h2>
+        <p style="text-align:center;color:var(--muted);margin-bottom:1.5rem">Browse breads, pastries, ice cream, coffee & more. Add unlimited products with your own photos, prices, and descriptions.</p>
+        
+        <div style="text-align:center;margin-bottom:2rem">
+          <button class="btn primary" onclick="openAddProductModal()">+ Add Product</button>
+        </div>
+        
+        <div id="basic-menu-content" class="grid"></div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" class="section">
       <div class="container">
         <h2>About A.M.G. Bakery & Cafe</h2>
-        <p>We sell and provide all related bakery items according to your requirements — from birthday and celebration cakes to everyday breads, buns, muffins, donuts, rolls, and more. We also serve coffee, tea, and ice cream. Freshness, flavor, and friendly service are our promise.</p>
+        <div style="max-width:700px;margin:2rem auto;line-height:1.8;font-size:1.05rem;color:var(--muted)">
+          <p>Welcome to <strong style="color:var(--text)">A.M.G. Bakery & Cafe</strong>, your trusted destination for freshly baked goodness. We specialize in a wide variety of bakery items tailored to your needs:</p>
+          <ul style="list-style:none;padding:0">
+            <li>🍞 <strong>Breads & Buns</strong> — Fresh, soft, and delicious daily</li>
+            <li>🧁 <strong>Pastries & Donuts</strong> — Variety of flavors and styles</li>
+            <li>🎂 <strong>Cakes</strong> — Birthday, celebration, and custom orders</li>
+            <li>☕ <strong>Coffee & Tea</strong> — Premium beverages</li>
+            <li>🍦 <strong>Ice Cream</strong> — Seasonal flavors</li>
+          </ul>
+          <p style="margin-top:2rem"><strong>Our Promise:</strong> Quality ingredients, freshness, and friendly service in every bite. Open whenever you need us!</p>
+        </div>
       </div>
     </section>
 
-    <section id="order" class="section order">
+    <!-- GALLERY -->
+    <section id="gallery" class="section alt-bg">
       <div class="container">
-        <h2>Your Order</h2>
+        <h2>📸 Gallery</h2>
+        <p style="text-align:center;color:var(--muted);margin-bottom:1.5rem">Share your bakery story with photos and captions. Add unlimited gallery photos.</p>
+        
+        <div style="text-align:center;margin-bottom:2rem">
+          <button class="btn primary" onclick="openAddGalleryModal()">+ Add Gallery Photo</button>
+        </div>
+        
+        <div class="gallery" id="gallery-grid"></div>
+      </div>
+    </section>
+    <section id="order" class="section">
+      <div class="container">
+        <h2>Order Online</h2>
         <div class="order-area">
-          <div class="cart" id="cart">
-            <p class="muted">Your cart is empty.</p>
+          <!-- CART -->
+          <div class="cart">
+            <h3>Your Cart</h3>
+            <p class="muted" id="empty-cart-msg">Your cart is empty. Add items from the menu.</p>
             <ul id="cart-items" class="cart-list"></ul>
             <div class="cart-summary" id="cart-summary" hidden>
               <p>Subtotal: <strong id="cart-subtotal">Rs 0</strong></p>
             </div>
           </div>
 
+          <!-- ORDER FORM -->
           <form id="order-form" class="order-form">
-            <h3>Delivery & Contact</h3>
-            <label>Name <input required type="text" name="name" id="cust-name"></label>
-            <label>Phone <input required type="tel" name="phone" id="cust-phone"></label>
-            <label>Address <input type="text" name="address" id="cust-address" placeholder="Delivery address (or leave empty for pickup)"></label>
-            <label>Delivery or Pickup
-              <select name="method" id="cust-method">
+            <h3>Delivery Details</h3>
+            
+            <label>
+              <span>Full Name *</span>
+              <input required type="text" name="name" id="cust-name" placeholder="Your name">
+            </label>
+
+            <label>
+              <span>Phone Number *</span>
+              <input required type="tel" name="phone" id="cust-phone" placeholder="9848551921">
+            </label>
+
+            <label>
+              <span>Delivery Address</span>
+              <textarea name="address" id="cust-address" rows="2" placeholder="(Optional for pickup)"></textarea>
+            </label>
+
+            <label>
+              <span>Delivery Method *</span>
+              <select name="method" id="cust-method" required>
                 <option value="delivery">Delivery</option>
-                <option value="pickup">Pickup</option>
+                <option value="pickup">Pickup at Shop</option>
               </select>
             </label>
-            <label>Any notes <textarea name="notes" id="cust-notes" rows="2" placeholder="e.g., no onions / include extra napkins"></textarea></label>
+
+            <h3 style="margin-top:1.5rem">Payment Method *</h3>
+            <div class="payment-method">
+              <label>
+                <input type="radio" name="payment" value="cod" checked>
+                💰 Cash on Delivery (COD)
+              </label>
+              <p style="margin:0;font-size:0.85rem;color:var(--muted)">Pay when you receive your order</p>
+            </div>
+
+            <div class="payment-method" id="cod-fields">
+              <p style="font-size:0.85rem;color:var(--accent);margin:0.5rem 0">✓ Payment on Delivery</p>
+            </div>
+
+            <div class="payment-method">
+              <label>
+                <input type="radio" name="payment" value="esewa">
+                📱 eSEWA Payment
+              </label>
+              <p style="margin:0;font-size:0.85rem;color:var(--muted)">Pay via eSEWA mobile wallet</p>
+            </div>
+
+            <div class="payment-method" id="esewa-fields" style="display:none;margin-top:0.5rem;padding:1rem;background:var(--light-bg);border-radius:6px">
+              <label style="margin-bottom:0.8rem">
+                <span style="font-weight:600;font-size:0.9rem">eSEWA Merchant ID</span>
+                <input type="text" id="esewa-id" placeholder="9807653211 (optional, provide if needed)" style="width:100%;padding:0.5rem;margin-top:0.3rem;border:1px solid var(--border);border-radius:4px">
+              </label>
+            </div>
+
+            <div class="payment-method">
+              <label>
+                <input type="radio" name="payment" value="bank">
+                🏦 Bank Transfer
+              </label>
+              <p style="margin:0;font-size:0.85rem;color:var(--muted)">Direct bank transfer</p>
+            </div>
+
+            <div class="payment-method" id="bank-fields" style="display:none;margin-top:0.5rem;padding:1rem;background:var(--light-bg);border-radius:6px">
+              <label style="margin-bottom:0.8rem">
+                <span style="font-weight:600;font-size:0.9rem">Bank Name</span>
+                <input type="text" id="bank-name" placeholder="e.g., Nabil Bank" style="width:100%;padding:0.5rem;margin-top:0.3rem;border:1px solid var(--border);border-radius:4px">
+              </label>
+              <label>
+                <span style="font-weight:600;font-size:0.9rem">Account Number</span>
+                <input type="text" id="bank-account" placeholder="e.g., 012345678" style="width:100%;padding:0.5rem;margin-top:0.3rem;border:1px solid var(--border);border-radius:4px">
+              </label>
+            </div>
+
+            <label>
+              <span>Special Instructions</span>
+              <textarea name="notes" id="cust-notes" rows="2" placeholder="e.g., no sugar, extra decorations, gluten-free, etc."></textarea>
+            </label>
 
             <div class="order-actions">
-              <button type="button" id="send-order" class="btn primary">Send Order (Email)</button>
-              <button type="button" id="send-order-online" class="btn primary">Send Order (Submit Online)</button>
+              <button type="button" id="send-order" class="btn primary">Send Order via Email</button>
               <button type="button" id="clear-cart" class="btn outline">Clear Cart</button>
             </div>
-            <p class="muted small">Orders can be sent via your email client or submitted online. Online submissions will be sent to our secure order endpoint; if you prefer to call, use <a href="tel:+9779848551921">9848551921</a>.</p>
+
+            <p class="muted small" style="margin-top:1rem">
+              📧 Orders will be sent to our email inbox. You can also call us directly: <a href="tel:+9779848551921">9848551921</a>
+            </p>
           </form>
         </div>
       </div>
     </section>
 
-    <section id="contact" class="section contact">
+    <!-- CONTACT -->
+    <section id="contact" class="section alt-bg">
       <div class="container">
         <h2>Contact & Location</h2>
-        <p>A.M.G. Bakery & Cafe — Pipira chowk, Birendranagar, Surkhet</p>
-        <p>Phone: <a href="tel:+9779848551921">9848551921</a>, <a href="tel:+9779826542784">9826542784</a></p>
-        <p>Email: <a href="mailto:orders@amg-bakery.com">orders@amg-bakery.com</a></p>
-        <p>Open hours: Always available as per your requirement — contact us to place orders.</p>
+        
+        <div class="contact-info">
+          <div>
+            <h3>📍 Location</h3>
+            <p><strong>A.M.G. Bakery & Cafe</strong></p>
+            <p>Pipira chowk<br>Birendranagar<br>Surkhet</p>
+          </div>
+          <div>
+            <h3>📞 Contact</h3>
+            <p><a href="tel:+9779848551921">+977 9848551921</a></p>
+            <p><a href="tel:+9779826542784">+977 9826542784</a></p>
+            <p><a href="mailto:ordersamgbakery@gmail.com">ordersamgbakery@gmail.com</a></p>
+          </div>
+        </div>
+
+        <div class="map-placeholder">
+          📍 <a href="https://maps.google.com/?q=Surkhet,Birendranagar" target="_blank" style="color:var(--accent)">View on Google Maps</a>
+        </div>
       </div>
     </section>
   </main>
 
+  <!-- FOOTER -->
   <footer class="site-footer">
     <div class="container footer-inner">
-      <div>© <strong>A.M.G. Bakery & Cafe</strong> — Pipira chowk, Birendranagar, Surkhet</div>
-      <div>Phone: 9848551921 / 9826542784</div>
+      <div>
+        <strong>A.M.G. Bakery & Cafe</strong><br>
+        Pipira chowk, Birendranagar, Surkhet<br>
+        <a href="tel:+9779848551921">9848551921</a> / <a href="tel:+9779826542784">9826542784</a>
+      </div>
+      <div style="text-align:right">
+        © 2025 A.M.G. Bakery & Cafe<br>
+        Made with 💛 for fresh baked goods
+      </div>
     </div>
   </footer>
 
