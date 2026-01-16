@@ -3,6 +3,25 @@
 let currentAdmin = null;
 let currentTestimonialRating = 0;
 
+// FLOATING SOCIAL MEDIA WIDGET
+function toggleFloatingSocial(){
+  const menu = document.querySelector('.floating-social-menu');
+  if(menu){
+    menu.classList.toggle('active');
+  }
+}
+
+// Close floating social when clicking outside
+document.addEventListener('DOMContentLoaded', function(){
+  document.addEventListener('click', function(e){
+    const social = document.querySelector('.floating-social');
+    if(social && !social.contains(e.target)){
+      const menu = document.querySelector('.floating-social-menu');
+      if(menu) menu.classList.remove('active');
+    }
+  });
+});
+
 // MOBILE MENU TOGGLE
 function toggleMobileMenu(){
   const nav = document.querySelector('.site-nav');
