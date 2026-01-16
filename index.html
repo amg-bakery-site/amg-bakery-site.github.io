@@ -31,13 +31,215 @@
         <a href="#order">Order</a>
       </nav>
 
-      <input type="text" id="search-input" placeholder="🔍 Search cakes, products..." style="padding:0.6rem 1rem;border:none;border-radius:6px;width:200px;margin-right:1rem">
+      <input type="text" id="search-input" placeholder="🔍 Search cakes, products..." style="padding:0.6rem 1rem;border:none;border-radius:6px;width:200px;margin-right:0.8rem;font-size:0.9rem">
+
+      <button id="loyalty-btn" style="display:none;background:var(--accent);color:var(--primary);border:none;padding:0.6rem 1rem;border-radius:6px;cursor:pointer;font-weight:600;margin-right:0.5rem">⭐ Points</button>
+
+      <button id="auth-btn" class="cart-btn" onclick="openLoginModal()" style="margin-right:0.5rem">👤 Login</button>
+
+      <button id="signup-btn" class="cart-btn" onclick="openRegisterModal()" style="margin-right:0.5rem;background:var(--accent);color:var(--primary)">📝 Sign Up</button>
+
+      <button id="admin-btn" class="cart-btn" onclick="openAdminModal()" style="margin-right:0.5rem;display:none;background:#9333EA;color:white">⚙️ Admin</button>
 
       <button class="cart-btn" id="cart-btn" aria-label="Open cart">🛒 Cart (<span id="cart-count">0</span>)</button>
     </div>
   </header>
 
-  <!-- LOGO UPLOAD MODAL -->
+  <!-- AUTH MODAL (Login/Register) -->
+  <div class="modal" id="auth-modal">
+    <div class="modal-content" style="max-width:450px">
+      <span class="modal-close" onclick="document.getElementById('auth-modal').classList.remove('active')">&times;</span>
+      <h3>Login to Your Account</h3>
+      
+      <!-- LOGIN FORM -->
+      <div id="login-form">
+        <label style="display:block;margin-bottom:1rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Email *</span>
+          <input type="email" id="login-email" placeholder="your@email.com" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <label style="display:block;margin-bottom:1.5rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Password *</span>
+          <input type="password" id="login-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+          <button class="btn primary" style="flex:1" onclick="doLogin()">Login</button>
+          <button class="btn outline" style="flex:1" onclick="openRegisterModal()">Create Account</button>
+        </div>
+        <div style="display:flex;gap:1rem;font-size:0.9rem">
+          <a href="#" onclick="openForgotPasswordModal();return false" style="color:var(--accent);text-decoration:none">Forgot password?</a>
+          <span style="color:var(--muted)">|</span>
+          <a href="#" onclick="openRegisterModal();return false" style="color:var(--accent);text-decoration:none">Don't have account?</a>
+        </div>
+      </div>
+      
+      <!-- REGISTER FORM -->
+      <div id="register-form" style="display:none">
+        <label style="display:block;margin-bottom:0.8rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Full Name *</span>
+          <input type="text" id="register-name" placeholder="John Doe" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <label style="display:block;margin-bottom:0.8rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Phone *</span>
+          <input type="tel" id="register-phone" placeholder="9841234567" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <label style="display:block;margin-bottom:0.8rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Email *</span>
+          <input type="email" id="register-email" placeholder="your@email.com" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <label style="display:block;margin-bottom:0.8rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Password *</span>
+          <input type="password" id="register-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <label style="display:block;margin-bottom:0.8rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Delivery Address</span>
+          <textarea id="register-address" rows="2" placeholder="Your delivery address" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px;font-family:inherit"></textarea>
+        </label>
+        <label style="display:block;margin-bottom:1rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Birthday (for birthday rewards!)</span>
+          <input type="date" id="register-birthday" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn primary" style="flex:1" onclick="doRegister()">Create Account</button>
+          <button class="btn outline" style="flex:1" onclick="openLoginModal()">Back to Login</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORGOT PASSWORD MODAL -->
+  <div class="modal" id="forgot-password-modal">
+    <div class="modal-content" style="max-width:450px">
+      <span class="modal-close" onclick="document.getElementById('forgot-password-modal').classList.remove('active')">&times;</span>
+      <h3>Reset Your Password</h3>
+      
+      <div id="forgot-step1" style="display:block">
+        <label style="display:block;margin-bottom:1rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Email Address *</span>
+          <input type="email" id="forgot-email" placeholder="your@email.com" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <button class="btn primary" style="width:100%" onclick="verifyEmailForPassword()">Find Account</button>
+        <p style="text-align:center;margin-top:1rem;color:var(--muted);font-size:0.9rem">
+          <a href="#" onclick="openLoginModal();return false" style="color:var(--primary);text-decoration:none">← Back to Login</a>
+        </p>
+      </div>
+
+      <div id="forgot-step2" style="display:none">
+        <label style="display:block;margin-bottom:1rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Security Question</span>
+          <p style="margin:0.3rem 0;color:var(--muted)" id="security-question">What is your mother's maiden name?</p>
+        </label>
+        <label style="display:block;margin-bottom:1rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Your Answer *</span>
+          <input type="text" id="security-answer" placeholder="Enter your answer" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <label style="display:block;margin-bottom:1rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">New Password *</span>
+          <input type="password" id="new-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <label style="display:block;margin-bottom:1rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Confirm Password *</span>
+          <input type="password" id="confirm-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <button class="btn primary" style="width:100%" onclick="resetPassword()">Reset Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN MODAL -->
+  <div class="modal" id="admin-modal">
+    <div class="modal-content" style="max-width:500px">
+      <span class="modal-close" onclick="document.getElementById('admin-modal').classList.remove('active')">&times;</span>
+      <h3>Admin Login</h3>
+      
+      <div id="admin-login" style="display:block">
+        <label style="display:block;margin-bottom:1rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Admin Email *</span>
+          <input type="email" id="admin-email" placeholder="admin@amgbakery.com" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <label style="display:block;margin-bottom:1.5rem">
+          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Password *</span>
+          <input type="password" id="admin-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+        </label>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn primary" style="flex:1" onclick="doAdminLogin()">Login as Admin</button>
+          <button class="btn outline" style="flex:1" onclick="document.getElementById('admin-modal').classList.remove('active')">Cancel</button>
+        </div>
+        <p style="text-align:center;margin-top:1rem;color:var(--muted);font-size:0.9rem">
+          Default: admin@amgbakery.com / password123
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT ABOUT MODAL -->
+  <div class="modal" id="edit-about-modal">
+    <div class="modal-content" style="max-width:800px;max-height:90vh;overflow-y:auto">
+      <span class="modal-close" onclick="document.getElementById('edit-about-modal').classList.remove('active')">&times;</span>
+      <h3>Edit About Section</h3>
+      
+      <div style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:1rem">
+        <p style="margin:0;color:var(--muted);font-size:0.9rem">
+          💡 <strong>Pro Tip:</strong> You can write anything here! Add opening hours, special offers, team info, etc. HTML is supported for formatting.
+        </p>
+      </div>
+
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">About Content (HTML & Emojis Supported)</span>
+        <textarea id="about-text-edit" rows="10" placeholder="Write your about content here..." style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:1rem;resize:vertical"></textarea>
+      </label>
+
+      <details style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:1rem">
+        <summary style="cursor:pointer;font-weight:600;color:var(--primary)">📝 Quick Formatting Guide</summary>
+        <div style="margin-top:1rem;font-size:0.9rem;color:var(--muted)">
+          <p><strong>Headings:</strong> &lt;h3&gt;My Heading&lt;/h3&gt;</p>
+          <p><strong>Bold:</strong> &lt;strong&gt;Bold text&lt;/strong&gt;</p>
+          <p><strong>Lists:</strong> &lt;ul&gt;&lt;li&gt;Item 1&lt;/li&gt;&lt;li&gt;Item 2&lt;/li&gt;&lt;/ul&gt;</p>
+          <p><strong>Links:</strong> &lt;a href="url"&gt;Link text&lt;/a&gt;</p>
+          <p><strong>Emojis:</strong> Just type them: 🍞 🎂 ☕ 🍦 etc.</p>
+          <p><strong>Line Break:</strong> &lt;br&gt;</p>
+        </div>
+      </details>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <button class="btn primary" onclick="saveAboutChanges()">💾 Save Changes</button>
+        <button class="btn outline" onclick="document.getElementById('edit-about-modal').classList.remove('active')">Cancel</button>
+      </div>
+      
+      <p style="color:var(--muted);font-size:0.85rem;text-align:center;margin:0">Changes will appear on your website immediately after saving</p>
+    </div>
+  </div>
+
+  <!-- ADD/EDIT TESTIMONIAL MODAL -->
+  <div class="modal" id="testimonial-modal">
+    <div class="modal-content" style="max-width:500px">
+      <span class="modal-close" onclick="document.getElementById('testimonial-modal').classList.remove('active')">&times;</span>
+      <h3>Add Your Review</h3>
+      
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Your Name *</span>
+        <input type="text" id="testimonial-name" placeholder="Your name" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Rating *</span>
+        <div style="display:flex;gap:0.5rem;font-size:1.5rem">
+          <span style="cursor:pointer" onclick="setRating(1)">☆</span>
+          <span style="cursor:pointer" onclick="setRating(2)">☆</span>
+          <span style="cursor:pointer" onclick="setRating(3)">☆</span>
+          <span style="cursor:pointer" onclick="setRating(4)">☆</span>
+          <span style="cursor:pointer" onclick="setRating(5)">☆</span>
+        </div>
+        <p style="margin:0.5rem 0;color:var(--accent);font-weight:600" id="rating-display">Select rating</p>
+      </label>
+
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Your Review *</span>
+        <textarea id="testimonial-text" rows="3" placeholder="What did you think about our products?" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px;font-family:inherit"></textarea>
+      </label>
+
+      <button class="btn primary" style="width:100%" onclick="submitTestimonial()">✓ Post Review</button>
+    </div>
+  </div>
   <div class="modal" id="logo-modal">
     <div class="modal-content">
       <span class="modal-close" onclick="document.getElementById('logo-modal').classList.remove('active')">&times;</span>
@@ -176,17 +378,57 @@
     <!-- ABOUT -->
     <section id="about" class="section">
       <div class="container">
-        <h2>About A.M.G. Bakery & Cafe</h2>
-        <div style="max-width:700px;margin:2rem auto;line-height:1.8;font-size:1.05rem;color:var(--muted)">
+        <h2 style="text-align:center">About A.M.G. Bakery & Cafe</h2>
+        <p style="color:var(--muted);text-align:center;font-size:0.9rem" id="admin-edit-hint"></p>
+        
+        <div style="max-width:800px;margin:2rem auto;line-height:1.8;font-size:1.05rem;color:var(--muted);background:var(--light-bg);padding:2rem;border-radius:8px" id="about-content">
           <p>Welcome to <strong style="color:var(--text)">A.M.G. Bakery & Cafe</strong>, your trusted destination for freshly baked goodness. We specialize in a wide variety of bakery items tailored to your needs:</p>
-          <ul style="list-style:none;padding:0">
-            <li>🍞 <strong>Breads & Buns</strong> — Fresh, soft, and delicious daily</li>
-            <li>🧁 <strong>Pastries & Donuts</strong> — Variety of flavors and styles</li>
-            <li>🎂 <strong>Cakes</strong> — Birthday, celebration, and custom orders</li>
-            <li>☕ <strong>Coffee & Tea</strong> — Premium beverages</li>
-            <li>🍦 <strong>Ice Cream</strong> — Seasonal flavors</li>
+          <ul style="list-style:none;padding:0;margin:1rem 0">
+            <li style="margin:0.5rem 0">🍞 <strong>Breads & Buns</strong> — Fresh, soft, and delicious daily</li>
+            <li style="margin:0.5rem 0">🧁 <strong>Pastries & Donuts</strong> — Variety of flavors and styles</li>
+            <li style="margin:0.5rem 0">🎂 <strong>Cakes</strong> — Birthday, celebration, and custom orders</li>
+            <li style="margin:0.5rem 0">☕ <strong>Coffee & Tea</strong> — Premium beverages</li>
+            <li style="margin:0.5rem 0">🍦 <strong>Ice Cream</strong> — Seasonal flavors</li>
           </ul>
           <p style="margin-top:2rem"><strong>Our Promise:</strong> Quality ingredients, freshness, and friendly service in every bite. Open whenever you need us!</p>
+        </div>
+
+        <div style="text-align:center;margin-top:2rem">
+          <button id="edit-about-btn" class="btn primary" onclick="openEditAboutModal()" style="display:none">✏️ Edit About Section</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- QUICK WINS: TODAY'S SPECIAL -->
+    <section id="today-special" class="section" style="background:linear-gradient(135deg, var(--primary), var(--accent));">
+      <div class="container" style="text-align:center;color:white">
+        <h2 style="color:white;margin:0.5rem 0">🔥 Today's Special</h2>
+        <p style="margin:0.5rem 0;font-size:1.1rem;opacity:0.95" id="special-offer">Chocolate Cake 30% OFF - Limited Time Only!</p>
+        <button class="btn primary" onclick="document.getElementById('cakes').scrollIntoView({behavior:'smooth'})" style="margin-top:1rem;background:white;color:var(--primary)">Browse Cakes →</button>
+      </div>
+    </section>
+
+    <!-- QUICK WINS: POPULAR ITEMS -->
+    <section id="popular-items" class="section alt-bg">
+      <div class="container">
+        <h2>⭐ Popular Items</h2>
+        <p style="text-align:center;color:var(--muted);margin-bottom:1.5rem">Most loved by our customers</p>
+        <div class="grid" id="popular-grid"></div>
+      </div>
+    </section>
+
+    <!-- QUICK WINS: TESTIMONIALS -->
+    <section id="testimonials" class="section">
+      <div class="container">
+        <h2>💬 What Our Customers Say</h2>
+        <p style="text-align:center;color:var(--muted);margin-bottom:2rem">Real reviews from real customers</p>
+        
+        <div style="text-align:center;margin-bottom:2rem">
+          <button class="btn primary" onclick="openTestimonialModal()">⭐ Add Your Review</button>
+        </div>
+        
+        <div class="grid" id="testimonials-grid">
+          <!-- Testimonials will be populated here -->
         </div>
       </div>
     </section>
@@ -204,6 +446,184 @@
         <div class="gallery" id="gallery-grid"></div>
       </div>
     </section>
+
+    <!-- USER PROFILE PAGE -->
+    <section id="profile-page" class="section alt-bg" style="display:none">
+      <div class="container">
+        <h2>👤 My Account</h2>
+        
+        <div style="max-width:900px;margin:2rem auto">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem">
+            
+            <!-- LEFT: Profile Info -->
+            <div>
+              <div style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+                <h3 style="color:var(--primary);margin-top:0">Account Details</h3>
+                <div style="margin-bottom:1rem">
+                  <span style="color:var(--muted);font-size:0.9rem">Full Name</span>
+                  <p style="margin:0.3rem 0;font-weight:600" id="profile-name">-</p>
+                </div>
+                <div style="margin-bottom:1rem">
+                  <span style="color:var(--muted);font-size:0.9rem">Email</span>
+                  <p style="margin:0.3rem 0;font-weight:600" id="profile-email">-</p>
+                </div>
+                <div style="margin-bottom:1rem">
+                  <span style="color:var(--muted);font-size:0.9rem">Phone</span>
+                  <p style="margin:0.3rem 0;font-weight:600" id="profile-phone">-</p>
+                </div>
+                <div style="margin-bottom:1rem">
+                  <span style="color:var(--muted);font-size:0.9rem">Member Since</span>
+                  <p style="margin:0.3rem 0;font-weight:600" id="profile-joined">-</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT: Loyalty & Stats -->
+            <div>
+              <div style="background:linear-gradient(135deg, var(--primary), var(--accent));padding:1.5rem;border-radius:8px;color:white;margin-bottom:1rem">
+                <div style="font-size:0.9rem;opacity:0.9">Total Loyalty Points</div>
+                <div style="font-size:2.5rem;font-weight:700;margin:0.5rem 0" id="profile-points">0</div>
+                <div style="font-size:0.85rem;opacity:0.85">1 point = Rs 100 spent</div>
+              </div>
+
+              <div style="background:white;padding:1rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:1rem">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                  <div>
+                    <span style="color:var(--muted);font-size:0.85rem">Total Orders</span>
+                    <p style="margin:0.3rem 0;font-size:1.5rem;font-weight:700;color:var(--primary)" id="profile-order-count">0</p>
+                  </div>
+                  <div>
+                    <span style="color:var(--muted);font-size:0.85rem">Total Spent</span>
+                    <p style="margin:0.3rem 0;font-size:1.5rem;font-weight:700;color:var(--primary)" id="profile-total-spent">Rs 0</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Edit Profile Section -->
+          <div style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-top:1.5rem">
+            <h3 style="color:var(--primary);margin-top:0">Edit Profile</h3>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+              <label>
+                <span style="font-weight:600;display:block;margin-bottom:0.3rem">Phone</span>
+                <input type="tel" id="profile-phone-edit" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+              </label>
+              <label>
+                <span style="font-weight:600;display:block;margin-bottom:0.3rem">Birthday</span>
+                <input type="date" id="profile-birthday-edit" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+              </label>
+            </div>
+
+            <label>
+              <span style="font-weight:600;display:block;margin-bottom:0.3rem">Delivery Address</span>
+              <textarea id="profile-address-edit" rows="2" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;margin-bottom:1rem"></textarea>
+            </label>
+
+            <button class="btn primary" onclick="saveProfileChanges()" style="margin-right:0.5rem">💾 Save Changes</button>
+            <button class="btn outline" onclick="goToOrderHistory()">📋 View Order History</button>
+            <button class="btn outline" onclick="doLogoutAndReload()" style="float:right">🚪 Logout</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ORDER HISTORY PAGE -->
+    <section id="order-history-page" class="section" style="display:none">
+      <div class="container">
+        <h2>📋 Order History</h2>
+        <div style="max-width:1000px;margin:2rem auto">
+          <button class="btn outline" onclick="goToProfile()" style="margin-bottom:1.5rem">← Back to Profile</button>
+          
+          <div id="orders-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN DASHBOARD PAGE -->
+    <section id="admin-dashboard" class="section" style="display:none">
+      <div class="container">
+        <h2>⚙️ Admin Dashboard</h2>
+        <div style="max-width:1200px;margin:2rem auto">
+          <button class="btn outline" onclick="doAdminLogout()" style="margin-bottom:1.5rem;float:right">🚪 Logout</button>
+          <div style="clear:both"></div>
+
+          <!-- Admin Tabs -->
+          <div style="display:flex;gap:0.5rem;margin-bottom:2rem;flex-wrap:wrap">
+            <button class="btn primary" onclick="showAdminTab('overview')" id="tab-overview">📊 Overview</button>
+            <button class="btn outline" onclick="showAdminTab('testimonials')" id="tab-testimonials">💬 Testimonials</button>
+            <button class="btn outline" onclick="showAdminTab('popular')" id="tab-popular">⭐ Popular Items</button>
+            <button class="btn outline" onclick="showAdminTab('orders')" id="tab-orders">📋 Orders</button>
+            <button class="btn outline" onclick="showAdminTab('customers')" id="tab-customers">👥 Customers</button>
+            <button class="btn outline" onclick="showAdminTab('sales')" id="tab-sales">💰 Sales</button>
+          </div>
+
+          <!-- OVERVIEW TAB -->
+          <div id="admin-overview" style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:block">
+            <h3 style="color:var(--primary);margin-top:0">Dashboard Overview</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem">
+              <div style="background:linear-gradient(135deg, var(--primary), var(--accent));color:white;padding:1.5rem;border-radius:8px">
+                <div style="font-size:0.9rem;opacity:0.9">Total Orders</div>
+                <div style="font-size:2rem;font-weight:700" id="admin-total-orders">0</div>
+              </div>
+              <div style="background:linear-gradient(135deg, var(--accent), #78350F);color:white;padding:1.5rem;border-radius:8px">
+                <div style="font-size:0.9rem;opacity:0.9">Registered Customers</div>
+                <div style="font-size:2rem;font-weight:700" id="admin-total-customers">0</div>
+              </div>
+              <div style="background:linear-gradient(135deg, #78350F, var(--primary));color:white;padding:1.5rem;border-radius:8px">
+                <div style="font-size:0.9rem;opacity:0.9">Newsletter Subscribers</div>
+                <div style="font-size:2rem;font-weight:700" id="admin-total-subscribers">0</div>
+              </div>
+              <div style="background:linear-gradient(135deg, #059669, var(--accent));color:white;padding:1.5rem;border-radius:8px">
+                <div style="font-size:0.9rem;opacity:0.9">Total Revenue</div>
+                <div style="font-size:2rem;font-weight:700" id="admin-total-revenue">Rs 0</div>
+              </div>
+            </div>
+            <p style="color:var(--muted)">👉 Use tabs above to manage testimonials, popular items, orders, and customers</p>
+          </div>
+
+          <!-- TESTIMONIALS TAB -->
+          <div id="admin-testimonials" style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:none">
+            <h3 style="color:var(--primary);margin-top:0">Manage Testimonials</h3>
+            <div id="admin-testimonials-list"></div>
+          </div>
+
+          <!-- POPULAR ITEMS TAB -->
+          <div id="admin-popular" style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:none">
+            <h3 style="color:var(--primary);margin-top:0">Mark Items as Popular</h3>
+            <p style="color:var(--muted);margin-bottom:1rem">Select items to display in the "Popular Items" section</p>
+            <div id="admin-popular-items"></div>
+          </div>
+
+          <!-- ORDERS TAB -->
+          <div id="admin-orders" style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:none">
+            <h3 style="color:var(--primary);margin-top:0">Recent Orders</h3>
+            <div id="admin-orders-list"></div>
+          </div>
+
+          <!-- CUSTOMERS TAB -->
+          <div id="admin-customers" style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:none">
+            <h3 style="color:var(--primary);margin-top:0">Registered Customers</h3>
+            <div id="admin-customers-list"></div>
+          </div>
+
+          <!-- SALES HISTORY TAB -->
+          <div id="admin-sales" style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:none">
+            <h3 style="color:var(--primary);margin-top:0">Sales History</h3>
+            <div style="margin-bottom:2rem">
+              <p style="color:var(--muted);margin-bottom:1rem">Total Revenue: <span style="font-size:1.3rem;font-weight:700;color:var(--primary)" id="sales-total-revenue">Rs 0</span></p>
+              <p style="color:var(--muted);margin-bottom:1rem">Total Items Sold: <span style="font-size:1.3rem;font-weight:700;color:var(--accent)" id="sales-total-items">0</span></p>
+            </div>
+            <h4 style="color:var(--primary)">Top Selling Items</h4>
+            <div id="admin-sales-items"></div>
+            <h4 style="color:var(--primary);margin-top:2rem">Recent Sales</h4>
+            <div id="admin-sales-history"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="order" class="section">
       <div class="container">
         <h2>Order Online</h2>
@@ -338,6 +758,15 @@
 
   <!-- FOOTER -->
   <footer class="site-footer">
+    <div class="container" style="margin-bottom:2rem">
+      <h3 style="text-align:center;margin-bottom:1rem">📧 Subscribe to Our Newsletter</h3>
+      <div style="max-width:500px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:0.5rem">
+        <input type="email" id="newsletter-email" placeholder="Enter your email" style="padding:0.7rem;border:1px solid var(--border);border-radius:6px;font-size:1rem">
+        <button class="btn primary" onclick="subscribeNewsletter()" style="white-space:nowrap">Subscribe</button>
+      </div>
+      <p style="text-align:center;color:var(--muted);font-size:0.9rem;margin-top:0.5rem">Get weekly special offers, new products, and baking tips!</p>
+    </div>
+
     <div class="container footer-inner">
       <div>
         <strong>A.M.G. Bakery & Cafe</strong><br>
@@ -351,5 +780,15 @@
     </div>
   </footer>
 
+  <script>
+    // Pre-fill form for logged-in users
+    window.addEventListener('load', ()=>{
+      if(currentUser){
+        document.getElementById('cust-name').value = currentUser.name;
+        document.getElementById('cust-phone').value = currentUser.phone;
+        document.getElementById('cust-address').value = currentUser.address;
+      }
+    });
+  </script>
 </body>
 </html>

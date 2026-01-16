@@ -1,9 +1,614 @@
-// A.M.G. Bakery & Cafe - Dynamic Cake & Product Ordering System
+// A.M.G. Bakery & Cafe - Professional Bakery Platform
 
-let cart = [];
-let cakes = [];
-let products = [];
-let searchQuery = '';
+let currentAdmin = null;
+let currentTestimonialRating = 0;
+
+// FORGOT PASSWORD FUNCTIONS
+function openForgotPasswordModal(){
+  document.getElementById('forgot-email').value = '';
+  document.getElementById('forgot-step1').style.display = 'block';
+  document.getElementById('forgot-step2').style.display = 'none';
+  document.getElementById('forgot-password-modal').classList.add('active');
+}
+
+function verifyEmailForPassword(){
+  const email = document.getElementById('forgot-email').value.trim();
+  if(!email){ alert('Please enter your email'); return; }
+  
+  const users = getAllUsers();
+  if(!users[email]){ 
+    alert('❌ Email not found. Please check and try again');
+    return;
+  }
+  
+  document.getElementById('forgot-step1').style.display = 'none';
+  document.getElementById('forgot-step2').style.display = 'block';
+  document.getElementById('security-question').textContent = 'What is your favorite bakery item?'; // You can make this dynamic
+}
+
+function resetPassword(){
+  const email = document.getElementById('forgot-email').value.trim();
+  const answer = document.getElementById('security-answer').value.trim().toLowerCase();
+  const newPass = document.getElementById('new-password').value;
+  const confirmPass = document.getElementById('confirm-password').value;
+  
+  if(!answer || !newPass || !confirmPass){ alert('Please fill all fields'); return; }
+  if(newPass !== confirmPass){ alert('Passwords do not match'); return; }
+  if(newPass.length < 6){ alert('Password must be at least 6 characters'); return; }
+  
+  // Simple verification - in production, use secure backend
+  if(answer !== 'cake' && answer !== 'bread' && answer !== 'pastry'){
+    alert('❌ Incorrect answer');
+    return;
+  }
+  
+  const users = getAllUsers();
+  users[email].password = simpleHash(newPass);
+  saveUsers(users);
+  
+  alert('✓ Password reset successfully! You can now login with your new password.');
+  document.getElementById('forgot-password-modal').classList.remove('active');
+  openLoginModal();
+}
+
+// ADMIN FUNCTIONS
+function openAdminModal(){
+  document.getElementById('admin-email').value = '';
+  document.getElementById('admin-password').value = '';
+  document.getElementById('admin-modal').classList.add('active');
+}
+
+function doAdminLogin(){
+  const email = document.getElementById('admin-email').value.trim();
+  const password = document.getElementById('admin-password').value;
+  
+  if(!email || !password){ alert('Please fill all fields'); return; }
+  
+  // Simple admin authentication (in production, use secure backend)
+  if(email === 'admin@amgbakery.com' && password === 'password123'){
+    currentAdmin = { email, name: 'Admin' };
+    localStorage.setItem('amg_admin', JSON.stringify(currentAdmin));
+    alert('✓ Admin login successful!');
+    document.getElementById('admin-modal').classList.remove('active');
+    showAdminDashboard();
+  } else {
+    alert('❌ Invalid admin credentials');
+  }
+}
+
+function showAdminDashboard(){
+  document.querySelectorAll('section').forEach(s=> s.style.display = 'none');
+  document.getElementById('admin-dashboard').style.display = 'block';
+  
+  // Load admin data
+  document.getElementById('admin-btn').style.display = 'inline-block';
+  showAdminTab('overview');
+  loadAdminOverview();
+  
+  window.scrollTo(0, 0);
+}
+
+function showAdminTab(tab){
+  document.querySelectorAll('[id^="admin-"]').forEach(el=> {
+    if(el.id.startsWith('admin-overview') || el.id.startsWith('admin-testimonials') || el.id.startsWith('admin-popular') || el.id.startsWith('admin-orders') || el.id.startsWith('admin-customers') || el.id.startsWith('admin-sales')){
+      el.style.display = 'none';
+    }
+  });
+  
+  document.querySelectorAll('[id^="tab-"]').forEach(btn=> btn.classList.remove('primary'));
+  
+  if(tab === 'overview'){
+    document.getElementById('admin-overview').style.display = 'block';
+    document.getElementById('tab-overview').classList.add('primary');
+    loadAdminOverview();
+  } else if(tab === 'testimonials'){
+    document.getElementById('admin-testimonials').style.display = 'block';
+    document.getElementById('tab-testimonials').classList.add('primary');
+    loadAdminTestimonials();
+  } else if(tab === 'popular'){
+    document.getElementById('admin-popular').style.display = 'block';
+    document.getElementById('tab-popular').classList.add('primary');
+    loadAdminPopular();
+  } else if(tab === 'orders'){
+    document.getElementById('admin-orders').style.display = 'block';
+    document.getElementById('tab-orders').classList.add('primary');
+    loadAdminOrders();
+  } else if(tab === 'customers'){
+    document.getElementById('admin-customers').style.display = 'block';
+    document.getElementById('tab-customers').classList.add('primary');
+    loadAdminCustomers();
+  } else if(tab === 'sales'){
+    document.getElementById('admin-sales').style.display = 'block';
+    document.getElementById('tab-sales').classList.add('primary');
+    loadAdminSales();
+  }
+}
+
+function loadAdminOverview(){
+  const users = getAllUsers();
+  const customerCount = Object.keys(users).length;
+  
+  let totalOrders = 0, totalRevenue = 0;
+  Object.values(users).forEach(user=>{
+    totalOrders += user.orders?.length || 0;
+    totalRevenue += user.totalSpent || 0;
+  });
+  
+  let subscribers = [];
+  try{ subscribers = JSON.parse(localStorage.getItem('amg_newsletter')) || []; }catch(e){}
+  
+  document.getElementById('admin-total-orders').textContent = totalOrders;
+  document.getElementById('admin-total-customers').textContent = customerCount;
+  document.getElementById('admin-total-subscribers').textContent = subscribers.length;
+  document.getElementById('admin-total-revenue').textContent = `Rs ${totalRevenue}`;
+}
+
+function loadAdminTestimonials(){
+  let testimonials = [];
+  try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
+  
+  let html = '';
+  if(testimonials.length === 0){
+    html = '<p style="color:var(--muted)">No testimonials yet</p>';
+  } else {
+    testimonials.forEach((t, idx)=>{
+      const stars = '⭐'.repeat(Math.round(t.rating));
+      html += `
+        <div style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:1rem;border-left:4px solid var(--accent)">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <div>${stars}</div>
+              <p style="margin:0.5rem 0;font-weight:600">${t.name}</p>
+              <p style="margin:0;color:var(--muted)">"${t.text}"</p>
+            </div>
+            <button onclick="deleteTestimonial(${idx})" style="background:#ef4444;color:white;border:none;padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;font-size:0.85rem">Delete</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+  document.getElementById('admin-testimonials-list').innerHTML = html;
+}
+
+function loadAdminPopular(){
+  const allItems = [...cakes, ...products];
+  let popular = [];
+  try{ popular = JSON.parse(localStorage.getItem('amg_popular_items')) || []; }catch(e){}
+  
+  let html = '';
+  allItems.forEach(item=>{
+    const isPopular = popular.includes(item.id);
+    html += `
+      <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--light-bg);border-radius:6px;margin-bottom:0.5rem">
+        <input type="checkbox" ${isPopular ? 'checked' : ''} onchange="togglePopularItem('${item.id}', this.checked)" style="cursor:pointer;width:20px;height:20px">
+        <span style="flex:1">${item.name} (Rs ${item.price})</span>
+        <span style="color:var(--muted);font-size:0.85rem">${isPopular ? '✓ Popular' : 'Not popular'}</span>
+      </div>
+    `;
+  });
+  
+  document.getElementById('admin-popular-items').innerHTML = html || '<p style="color:var(--muted)">No items available</p>';
+}
+
+function togglePopularItem(itemId, isPopular){
+  let popular = [];
+  try{ popular = JSON.parse(localStorage.getItem('amg_popular_items')) || []; }catch(e){}
+  
+  if(isPopular){
+    if(!popular.includes(itemId)) popular.push(itemId);
+  } else {
+    popular = popular.filter(id=> id !== itemId);
+  }
+  
+  localStorage.setItem('amg_popular_items', JSON.stringify(popular));
+  displayPopularItems(); // Refresh popular section
+}
+
+function loadAdminOrders(){
+  const users = getAllUsers();
+  let allOrders = [];
+  
+  Object.values(users).forEach(user=>{
+    (user.orders || []).forEach(order=>{
+      allOrders.push({ ...order, customerName: user.name, customerEmail: user.email });
+    });
+  });
+  
+  allOrders.sort((a,b)=> new Date(b.date) - new Date(a.date));
+  
+  let html = '';
+  if(allOrders.length === 0){
+    html = '<p style="color:var(--muted)">No orders yet</p>';
+  } else {
+    allOrders.slice(0, 10).forEach(order=>{
+      const date = new Date(order.date).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'});
+      html += `
+        <div style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:1rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
+            <div>
+              <span style="color:var(--muted);font-size:0.9rem">Order ID</span>
+              <p style="margin:0.3rem 0;font-weight:600;font-family:monospace">${order.id}</p>
+            </div>
+            <div>
+              <span style="color:var(--muted);font-size:0.9rem">Customer</span>
+              <p style="margin:0.3rem 0;font-weight:600">${order.customerName}</p>
+            </div>
+            <div>
+              <span style="color:var(--muted);font-size:0.9rem">Amount & Date</span>
+              <p style="margin:0;font-weight:600;color:var(--primary)">Rs ${order.total} • ${date}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  }
+  
+  document.getElementById('admin-orders-list').innerHTML = html;
+}
+
+function loadAdminCustomers(){
+  const users = getAllUsers();
+  
+  let html = '';
+  if(Object.keys(users).length === 0){
+    html = '<p style="color:var(--muted)">No customers yet</p>';
+  } else {
+    Object.values(users).forEach(user=>{
+      const joined = new Date(user.createdAt).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'});
+      html += `
+        <div style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:1rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
+            <div>
+              <span style="color:var(--muted);font-size:0.9rem">Name & Email</span>
+              <p style="margin:0.3rem 0;font-weight:600">${user.name}</p>
+              <p style="margin:0;font-size:0.85rem;color:var(--muted)">${user.email}</p>
+            </div>
+            <div>
+              <span style="color:var(--muted);font-size:0.9rem">Phone & Address</span>
+              <p style="margin:0.3rem 0;font-weight:600">${user.phone || '—'}</p>
+            </div>
+            <div>
+              <span style="color:var(--muted);font-size:0.9rem">Loyalty & Orders</span>
+              <p style="margin:0;font-weight:600">⭐ ${user.loyaltyPoints} points • ${user.orders?.length || 0} orders</p>
+              <p style="margin:0;font-size:0.85rem;color:var(--accent)">Joined: ${joined}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  }
+  
+  document.getElementById('admin-customers-list').innerHTML = html;
+}
+
+function doAdminLogout(){
+  currentAdmin = null;
+  localStorage.removeItem('amg_admin');
+  alert('Admin logged out');
+  document.getElementById('admin-btn').style.display = 'none';
+  document.querySelectorAll('section').forEach(s=> s.style.display = 'block');
+  document.getElementById('admin-dashboard').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
+// TESTIMONIALS FUNCTIONS
+function openTestimonialModal(){
+  document.getElementById('testimonial-name').value = '';
+  document.getElementById('testimonial-text').value = '';
+  currentTestimonialRating = 0;
+  document.getElementById('rating-display').textContent = 'Select rating';
+  document.getElementById('testimonial-modal').classList.add('active');
+}
+
+function setRating(rating){
+  currentTestimonialRating = rating;
+  document.getElementById('rating-display').textContent = '⭐'.repeat(rating) + ` ${rating} stars`;
+}
+
+function submitTestimonial(){
+  const name = document.getElementById('testimonial-name').value.trim();
+  const text = document.getElementById('testimonial-text').value.trim();
+  const rating = currentTestimonialRating;
+  
+  if(!name || !text || !rating){ alert('Please fill all fields'); return; }
+  
+  let testimonials = [];
+  try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
+  
+  testimonials.push({ name, text, rating, date: new Date().toISOString() });
+  localStorage.setItem('amg_testimonials', JSON.stringify(testimonials));
+  
+  alert('✓ Thank you for your review!');
+  document.getElementById('testimonial-modal').classList.remove('active');
+  displayTestimonials();
+}
+
+function deleteTestimonial(idx){
+  if(!currentAdmin){ alert('❌ Only admin can delete testimonials'); return; }
+  if(!confirm('Delete this testimonial?')) return;
+  
+  let testimonials = [];
+  try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
+  
+  testimonials.splice(idx, 1);
+  localStorage.setItem('amg_testimonials', JSON.stringify(testimonials));
+  
+  alert('✓ Testimonial deleted');
+  if(currentAdmin){
+    loadAdminTestimonials();
+  } else {
+    displayTestimonials();
+  }
+}
+
+// ABOUT SECTION FUNCTIONS
+function openEditAboutModal(){
+  if(!currentAdmin){ alert('❌ Only admin can edit about section'); return; }
+  
+  let aboutContent = localStorage.getItem('amg_about_content');
+  if(!aboutContent){
+    aboutContent = `<p>Welcome to <strong style="color:var(--text)">A.M.G. Bakery & Cafe</strong>, your trusted destination for freshly baked goodness. We specialize in a wide variety of bakery items tailored to your needs:</p>
+<ul style="list-style:none;padding:0">
+<li>🍞 <strong>Breads & Buns</strong> — Fresh, soft, and delicious daily</li>
+<li>🧁 <strong>Pastries & Donuts</strong> — Variety of flavors and styles</li>
+<li>🎂 <strong>Cakes</strong> — Birthday, celebration, and custom orders</li>
+<li>☕ <strong>Coffee & Tea</strong> — Premium beverages</li>
+<li>🍦 <strong>Ice Cream</strong> — Seasonal flavors</li>
+</ul>
+<p style="margin-top:2rem"><strong>Our Promise:</strong> Quality ingredients, freshness, and friendly service in every bite. Open whenever you need us!</p>`;
+  }
+  
+  document.getElementById('about-text-edit').value = aboutContent;
+  document.getElementById('edit-about-modal').classList.add('active');
+}
+
+function saveAboutChanges(){
+  const aboutText = document.getElementById('about-text-edit').value.trim();
+  if(!aboutText){ alert('Please enter about text'); return; }
+  
+  localStorage.setItem('amg_about_content', aboutText);
+  alert('✓ About section updated!');
+  document.getElementById('edit-about-modal').classList.remove('active');
+  displayAboutSection();
+}
+
+function displayAboutSection(){
+  let aboutContent = localStorage.getItem('amg_about_content');
+  if(!aboutContent){
+    aboutContent = `<p>Welcome to <strong style="color:var(--text)">A.M.G. Bakery & Cafe</strong>, your trusted destination for freshly baked goodness. We specialize in a wide variety of bakery items tailored to your needs:</p>
+<ul style="list-style:none;padding:0">
+<li>🍞 <strong>Breads & Buns</strong> — Fresh, soft, and delicious daily</li>
+<li>🧁 <strong>Pastries & Donuts</strong> — Variety of flavors and styles</li>
+<li>🎂 <strong>Cakes</strong> — Birthday, celebration, and custom orders</li>
+<li>☕ <strong>Coffee & Tea</strong> — Premium beverages</li>
+<li>🍦 <strong>Ice Cream</strong> — Seasonal flavors</li>
+</ul>
+<p style="margin-top:2rem"><strong>Our Promise:</strong> Quality ingredients, freshness, and friendly service in every bite. Open whenever you need us!</p>`;
+  }
+  
+  document.getElementById('about-content').innerHTML = aboutContent;
+  
+  // Show edit button and hint only for admin
+  const editBtn = document.getElementById('edit-about-btn');
+  const hintText = document.getElementById('admin-edit-hint');
+  if(currentAdmin){
+    editBtn.style.display = 'inline-block';
+    hintText.textContent = '✏️ You can edit this section anytime';
+  } else {
+    editBtn.style.display = 'none';
+    hintText.textContent = '';
+  }
+}
+
+// SALES HISTORY FUNCTIONS
+function trackSale(items, total){
+  let sales = [];
+  try{ sales = JSON.parse(localStorage.getItem('amg_sales_history')) || []; }catch(e){}
+  
+  const sale = {
+    id: 'SALE-' + Date.now(),
+    date: new Date().toISOString(),
+    items: items,
+    total: total
+  };
+  
+  sales.push(sale);
+  localStorage.setItem('amg_sales_history', JSON.stringify(sales));
+}
+
+function loadAdminSales(){
+  let sales = [];
+  try{ sales = JSON.parse(localStorage.getItem('amg_sales_history')) || []; }catch(e){}
+  
+  if(sales.length === 0){
+    document.getElementById('admin-sales-items').innerHTML = '<p style="color:var(--muted)">No sales yet</p>';
+    document.getElementById('admin-sales-history').innerHTML = '<p style="color:var(--muted)">No sales history</p>';
+    return;
+  }
+  
+  // Calculate totals
+  let totalRevenue = 0;
+  let totalItems = 0;
+  let itemSales = {};
+  
+  sales.forEach(sale=>{
+    totalRevenue += sale.total;
+    sale.items.forEach(item=>{
+      totalItems += item.qty;
+      if(!itemSales[item.name]){
+        itemSales[item.name] = { qty: 0, total: 0, price: item.price };
+      }
+      itemSales[item.name].qty += item.qty;
+      itemSales[item.name].total += item.qty * item.price;
+    });
+  });
+  
+  document.getElementById('sales-total-revenue').textContent = `Rs ${totalRevenue}`;
+  document.getElementById('sales-total-items').textContent = totalItems;
+  
+  // Top selling items
+  let topItems = Object.entries(itemSales)
+    .map(([name, data])=> ({ name, ...data }))
+    .sort((a,b)=> b.qty - a.qty)
+    .slice(0, 10);
+  
+  let html = '';
+  topItems.forEach(item=>{
+    html += `
+      <div style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:0.5rem">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:1rem">
+          <div><strong>${item.name}</strong></div>
+          <div><span style="color:var(--muted);font-size:0.85rem">Qty: </span><strong>${item.qty}</strong></div>
+          <div><span style="color:var(--muted);font-size:0.85rem">Price: </span><strong>Rs ${item.price}</strong></div>
+          <div><span style="color:var(--muted);font-size:0.85rem">Total: </span><strong style="color:var(--primary)">Rs ${item.total}</strong></div>
+        </div>
+      </div>
+    `;
+  });
+  document.getElementById('admin-sales-items').innerHTML = html;
+  
+  // Recent sales
+  html = '';
+  sales.slice(-10).reverse().forEach(sale=>{
+    const date = new Date(sale.date).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+    const itemsList = sale.items.map(i=> `${i.name}×${i.qty}`).join(', ');
+    html += `
+      <div style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:0.5rem;border-left:4px solid var(--accent)">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <p style="margin:0;font-weight:600">${itemsList}</p>
+            <p style="margin:0.3rem 0;font-size:0.85rem;color:var(--muted)">${date}</p>
+          </div>
+          <p style="margin:0;font-size:1.1rem;font-weight:700;color:var(--primary)">Rs ${sale.total}</p>
+        </div>
+      </div>
+    `;
+  });
+  document.getElementById('admin-sales-history').innerHTML = html;
+}
+
+// ============ USER AUTHENTICATION SYSTEM ============
+function loadCurrentUser(){
+  try{
+    const stored = localStorage.getItem('amg_currentUser');
+    currentUser = stored ? JSON.parse(stored) : null;
+  }catch(e){
+    currentUser = null;
+  }
+}
+
+function getAllUsers(){
+  try{
+    return JSON.parse(localStorage.getItem('amg_users')) || {};
+  }catch(e){
+    return {};
+  }
+}
+
+function saveUsers(users){
+  localStorage.setItem('amg_users', JSON.stringify(users));
+}
+
+function simpleHash(str){
+  let hash = 0;
+  for(let i = 0; i < str.length; i++){
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString(36);
+}
+
+function registerUser(name, phone, email, password, address, birthday){
+  const users = getAllUsers();
+  if(users[email]){ return { success: false, message: 'Email already registered' } }
+  
+  users[email] = {
+    name: name,
+    phone: phone,
+    email: email,
+    password: simpleHash(password),
+    address: address || '',
+    birthday: birthday || '',
+    loyaltyPoints: 0,
+    totalSpent: 0,
+    createdAt: new Date().toISOString(),
+    orders: []
+  };
+  
+  saveUsers(users);
+  return { success: true, message: 'Registration successful!' };
+}
+
+function loginUser(email, password){
+  const users = getAllUsers();
+  const user = users[email];
+  
+  if(!user) return { success: false, message: 'Email not found' };
+  if(user.password !== simpleHash(password)) return { success: false, message: 'Wrong password' };
+  
+  currentUser = { ...user };
+  delete currentUser.password;
+  localStorage.setItem('amg_currentUser', JSON.stringify(currentUser));
+  
+  return { success: true, message: 'Login successful!' };
+}
+
+function logoutUser(){
+  currentUser = null;
+  localStorage.removeItem('amg_currentUser');
+}
+
+function updateUserProfile(email, updates){
+  const users = getAllUsers();
+  if(users[email]){
+    users[email] = { ...users[email], ...updates };
+    saveUsers(users);
+    currentUser = { ...users[email] };
+    delete currentUser.password;
+    localStorage.setItem('amg_currentUser', JSON.stringify(currentUser));
+    return { success: true };
+  }
+  return { success: false };
+}
+
+function addOrder(orderData){
+  if(!currentUser) return false;
+  
+  const users = getAllUsers();
+  const user = users[currentUser.email];
+  if(!user) return false;
+  
+  const order = {
+    id: 'ORD-' + Date.now(),
+    date: new Date().toISOString(),
+    items: orderData.items,
+    total: orderData.total,
+    status: 'Confirmed',
+    method: orderData.method,
+    address: orderData.address,
+    phone: orderData.phone
+  };
+  
+  // Calculate loyalty points (1 point per Rs 100)
+  const points = Math.floor(orderData.total / 100);
+  user.orders.push(order);
+  user.loyaltyPoints += points;
+  user.totalSpent += orderData.total;
+  
+  saveUsers(users);
+  currentUser = { ...user };
+  delete currentUser.password;
+  localStorage.setItem('amg_currentUser', JSON.stringify(currentUser));
+  
+  return order;
+}
+
+function getOrderHistory(){
+  if(!currentUser) return [];
+  const users = getAllUsers();
+  return (users[currentUser.email]?.orders || []).reverse();
+}
 
 // UTILITY FUNCTIONS
 function formatPrice(n){ return `Rs ${n}` }
@@ -434,7 +1039,367 @@ function sendOrder(){
 
   const body = encodeURIComponent(lines.join('\n'));
   const subject = encodeURIComponent(`ORDER from ${name} - A.M.G. Bakery`);
+  
+  // Track sale in history
+  trackSale(cart, subtotal);
+  
+  // Track order for logged-in users
+  if(currentUser){
+    const orderData = {
+      items: cart,
+      total: subtotal,
+      method: method,
+      address: address,
+      phone: phone
+    };
+    addOrder(orderData);
+  }
+  
+  // Clear cart and show success
+  clearCart();
+  alert('✅ Order sent! Check your email inbox for confirmation.\n\nLoyalty Points: +'+ Math.floor(subtotal/100));
+  
   window.location.href = `mailto:ordersamgbakery@gmail.com?subject=${subject}&body=${body}`;
+}
+
+// LOGIN/REGISTER MODAL FUNCTIONS
+function openLoginModal(){
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('auth-modal').dataset.mode = 'login';
+  document.getElementById('auth-modal').querySelector('h3').textContent = 'Login to Your Account';
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('register-form').style.display = 'none';
+  document.getElementById('auth-modal').classList.add('active');
+}
+
+function openRegisterModal(){
+  document.getElementById('register-name').value = '';
+  document.getElementById('register-phone').value = '';
+  document.getElementById('register-email').value = '';
+  document.getElementById('register-password').value = '';
+  document.getElementById('register-address').value = '';
+  document.getElementById('register-birthday').value = '';
+  document.getElementById('auth-modal').dataset.mode = 'register';
+  document.getElementById('auth-modal').querySelector('h3').textContent = 'Create New Account';
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('register-form').style.display = 'block';
+  document.getElementById('auth-modal').classList.add('active');
+}
+
+function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if(!email || !password){ alert('Please fill all fields'); return }
+  
+  const result = loginUser(email, password);
+  if(result.success){
+    alert(result.message);
+    document.getElementById('auth-modal').classList.remove('active');
+    updateAuthUI();
+    location.reload();
+  } else {
+    alert('❌ ' + result.message);
+  }
+}
+
+function doRegister(){
+  const name = document.getElementById('register-name').value.trim();
+  const phone = document.getElementById('register-phone').value.trim();
+  const email = document.getElementById('register-email').value.trim();
+  const password = document.getElementById('register-password').value;
+  const address = document.getElementById('register-address').value.trim();
+  const birthday = document.getElementById('register-birthday').value;
+  
+  if(!name || !phone || !email || !password){ 
+    alert('Please fill all required fields');
+    return;
+  }
+  
+  const result = registerUser(name, phone, email, password, address, birthday);
+  if(result.success){
+    alert(result.message + '\nNow logging you in...');
+    loginUser(email, password);
+    document.getElementById('auth-modal').classList.remove('active');
+    updateAuthUI();
+    location.reload();
+  } else {
+    alert('❌ ' + result.message);
+  }
+}
+
+function updateAuthUI(){
+  const authBtn = document.getElementById('auth-btn');
+  const signupBtn = document.getElementById('signup-btn');
+  const loyaltyBtn = document.getElementById('loyalty-btn');
+  const adminBtn = document.getElementById('admin-btn');
+  
+  // Check if admin is logged in
+  let admin = null;
+  try{ admin = JSON.parse(localStorage.getItem('amg_admin')); }catch(e){}
+  
+  if(admin){
+    authBtn.style.display = 'none';
+    signupBtn.style.display = 'none';
+    adminBtn.style.display = 'inline-block';
+    adminBtn.innerHTML = '⚙️ Admin Dashboard';
+    adminBtn.onclick = ()=> showAdminDashboard();
+    loyaltyBtn.style.display = 'none';
+    currentAdmin = admin;
+  } else if(currentUser){
+    authBtn.innerHTML = `👤 ${currentUser.name.split(' ')[0]} | Account`;
+    authBtn.onclick = ()=>{ goToProfile(); };
+    authBtn.style.display = 'inline-block';
+    signupBtn.style.display = 'none';
+    adminBtn.style.display = 'none';
+    
+    if(loyaltyBtn){
+      loyaltyBtn.style.display = 'inline-block';
+      loyaltyBtn.innerHTML = `⭐ ${currentUser.loyaltyPoints} Points`;
+      loyaltyBtn.onclick = ()=> goToProfile();
+    }
+  } else {
+    authBtn.innerHTML = `👤 Login`;
+    authBtn.onclick = ()=>{ openLoginModal(); };
+    authBtn.style.display = 'inline-block';
+    signupBtn.style.display = 'inline-block';
+    adminBtn.style.display = 'none';
+    
+    if(loyaltyBtn) loyaltyBtn.style.display = 'none';
+  }
+}
+
+// PROFILE PAGE FUNCTIONS
+function goToProfile(){
+  if(!currentUser){ alert('Please login first'); return; }
+  
+  // Hide all main sections
+  document.querySelectorAll('section').forEach(s=> s.style.display = 'none');
+  document.getElementById('profile-page').style.display = 'block';
+  
+  // Populate profile info
+  document.getElementById('profile-name').textContent = currentUser.name;
+  document.getElementById('profile-email').textContent = currentUser.email;
+  document.getElementById('profile-phone').textContent = currentUser.phone || '(Not provided)';
+  document.getElementById('profile-points').textContent = currentUser.loyaltyPoints;
+  document.getElementById('profile-order-count').textContent = currentUser.orders?.length || 0;
+  document.getElementById('profile-total-spent').textContent = `Rs ${currentUser.totalSpent || 0}`;
+  
+  const joined = currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'}) : 'Unknown';
+  document.getElementById('profile-joined').textContent = joined;
+  
+  // Populate edit fields
+  document.getElementById('profile-phone-edit').value = currentUser.phone || '';
+  document.getElementById('profile-birthday-edit').value = currentUser.birthday || '';
+  document.getElementById('profile-address-edit').value = currentUser.address || '';
+  
+  window.scrollTo(0, 0);
+}
+
+function goToOrderHistory(){
+  if(!currentUser){ alert('Please login first'); return; }
+  
+  // Hide all main sections
+  document.querySelectorAll('section').forEach(s=> s.style.display = 'none');
+  document.getElementById('order-history-page').style.display = 'block';
+  
+  displayOrderHistory();
+  window.scrollTo(0, 0);
+}
+
+function displayOrderHistory(){
+  const ordersList = document.getElementById('orders-list');
+  const orders = getOrderHistory();
+  
+  if(orders.length === 0){
+    ordersList.innerHTML = `
+      <div style="text-align:center;padding:2rem;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+        <div style="font-size:3rem;margin-bottom:1rem">📭</div>
+        <p style="color:var(--muted);font-size:1.1rem">No orders yet</p>
+        <p style="color:var(--muted);margin-bottom:1.5rem">Start ordering delicious cakes and products!</p>
+        <button class="btn primary" onclick="goToOrders()">🛒 Go to Order Menu</button>
+      </div>
+    `;
+    return;
+  }
+  
+  let html = '';
+  orders.forEach(order=>{
+    const orderDate = new Date(order.date).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+    const itemsHtml = order.items.map(item=> `<li>${item.name} × ${item.qty} = Rs ${item.qty * item.price}</li>`).join('');
+    const points = Math.floor(order.total / 100);
+    
+    html += `
+      <div style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)">
+          <div>
+            <span style="color:var(--muted);font-size:0.9rem">Order ID</span>
+            <p style="margin:0.3rem 0;font-weight:600;font-family:monospace">${order.id}</p>
+          </div>
+          <div>
+            <span style="color:var(--muted);font-size:0.9rem">Date</span>
+            <p style="margin:0.3rem 0;font-weight:600">${orderDate}</p>
+          </div>
+          <div>
+            <span style="color:var(--muted);font-size:0.9rem">Status</span>
+            <p style="margin:0.3rem 0;font-weight:600;color:var(--accent)">✓ ${order.status}</p>
+          </div>
+        </div>
+        
+        <div style="margin-bottom:1rem">
+          <span style="color:var(--muted);font-size:0.9rem">Items</span>
+          <ul style="list-style:none;padding:0;margin:0.5rem 0">${itemsHtml}</ul>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1rem;background:var(--light-bg);border-radius:6px;margin-bottom:1rem">
+          <div>
+            <span style="color:var(--muted);font-size:0.9rem">Total Amount</span>
+            <p style="margin:0;font-size:1.3rem;font-weight:700;color:var(--primary)">Rs ${order.total}</p>
+          </div>
+          <div>
+            <span style="color:var(--muted);font-size:0.9rem">Loyalty Points Earned</span>
+            <p style="margin:0;font-size:1.3rem;font-weight:700;color:var(--accent)">⭐ +${points}</p>
+          </div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div>
+            <span style="color:var(--muted);font-size:0.9rem">Delivery Method</span>
+            <p style="margin:0.3rem 0;font-weight:600">${order.method === 'delivery' ? '🚗 Delivery' : '🏪 Pickup'}</p>
+          </div>
+          <div>
+            <span style="color:var(--muted);font-size:0.9rem">Delivery Address</span>
+            <p style="margin:0.3rem 0;font-weight:600">${order.address || 'N/A'}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  ordersList.innerHTML = html;
+}
+
+function saveProfileChanges(){
+  const phone = document.getElementById('profile-phone-edit').value.trim();
+  const address = document.getElementById('profile-address-edit').value.trim();
+  const birthday = document.getElementById('profile-birthday-edit').value;
+  
+  if(!phone){ alert('Phone is required'); return; }
+  
+  const updates = { phone, address, birthday };
+  const result = updateUserProfile(currentUser.email, updates);
+  
+  if(result.success){
+    alert('✓ Profile updated successfully!');
+    goToProfile(); // Refresh profile display
+  } else {
+    alert('❌ Failed to update profile');
+  }
+}
+
+function doLogoutAndReload(){
+  if(confirm('Are you sure you want to logout?')){
+    logoutUser();
+    alert('Logged out successfully');
+    location.reload();
+  }
+}
+
+function goToOrders(){
+  // Hide profile/order-history, show order section
+  document.querySelectorAll('section').forEach(s=> s.style.display = 'block');
+  document.getElementById('profile-page').style.display = 'none';
+  document.getElementById('order-history-page').style.display = 'none';
+  document.getElementById('order').scrollIntoView({behavior:'smooth'});
+}
+
+// QUICK WINS FUNCTIONS
+function displayPopularItems(){
+  const allItems = [...cakes, ...products];
+  let popular = [];
+  try{ popular = JSON.parse(localStorage.getItem('amg_popular_items')) || []; }catch(e){}
+  
+  // If no items marked as popular, use first 3 items
+  let itemsToShow = popular.length > 0 
+    ? allItems.filter(item=> popular.includes(item.id))
+    : allItems.slice(0, 3);
+  
+  if(itemsToShow.length === 0){
+    document.getElementById('popular-grid').innerHTML = '<p style="text-align:center;grid-column:1/-1;color:var(--muted)">Popular items will appear here</p>';
+    return;
+  }
+  
+  let html = '';
+  itemsToShow.forEach(item=>{
+    html += `
+      <div style="background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:transform 0.3s" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="width:100%;height:200px;background:${item.photo ? `url('${item.photo}') center/cover` : 'linear-gradient(135deg, var(--light-bg), var(--border))'};display:flex;align-items:center;justify-content:center;color:var(--muted)">
+          ${!item.photo ? '📷' : ''}
+        </div>
+        <div style="padding:1rem">
+          <h4 style="margin:0 0 0.5rem 0;color:var(--primary)">${item.name}</h4>
+          <p style="margin:0 0 1rem 0;color:var(--muted);font-size:0.9rem;min-height:2.1em">${(item.desc || 'Premium bakery item').substring(0, 60)}...</p>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:1.3rem;font-weight:700;color:var(--accent)">Rs ${item.price}</span>
+            <button class="btn primary" onclick="addToCart({...item})" style="padding:0.5rem 1rem;font-size:0.9rem">Add</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  document.getElementById('popular-grid').innerHTML = html;
+}
+
+function displayTestimonials(){
+  let testimonials = [];
+  try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
+  
+  // Add default testimonials if none exist
+  if(testimonials.length === 0){
+    testimonials = [
+      {name: 'Ram Sharma', rating: 5, text: 'Best bakery in Surkhet! Fresh cakes every time. Highly recommend! 🎂'},
+      {name: 'Priya Thapa', rating: 5, text: 'Amazing quality and quick delivery. Their chocolate cake is to die for! 😋'},
+      {name: 'Arjun KC', rating: 4.5, text: 'Great variety of products. Love their breads and pastries. Will order again!'},
+      {name: 'Anjali Negi', rating: 5, text: 'Professional service and delicious food. Perfect for parties! 🎉'}
+    ];
+  }
+  
+  let html = '';
+  testimonials.forEach((review, idx)=>{
+    const stars = '⭐'.repeat(Math.round(review.rating)) + (review.rating % 1 ? '✨' : '');
+    html += `
+      <div style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);position:relative">
+        <div style="margin-bottom:0.5rem">${stars}</div>
+        <p style="margin:0 0 1rem 0;font-style:italic;color:var(--text)">"${review.text}"</p>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <p style="margin:0;font-weight:600;color:var(--primary)">— ${review.name}</p>
+          ${currentAdmin ? `<button onclick="deleteTestimonial(${idx})" style="background:#ef4444;color:white;border:none;padding:0.3rem 0.6rem;border-radius:4px;cursor:pointer;font-size:0.8rem">Delete</button>` : ''}
+        </div>
+      </div>
+    `;
+  });
+  
+  document.getElementById('testimonials-grid').innerHTML = html;
+}
+
+function subscribeNewsletter(){
+  const email = document.getElementById('newsletter-email').value.trim();
+  if(!email){ alert('Please enter your email'); return; }
+  
+  // Save to localStorage
+  let subscribers = [];
+  try{
+    subscribers = JSON.parse(localStorage.getItem('amg_newsletter')) || [];
+  }catch(e){}
+  
+  if(!subscribers.includes(email)){
+    subscribers.push(email);
+    localStorage.setItem('amg_newsletter', JSON.stringify(subscribers));
+  }
+  
+  document.getElementById('newsletter-email').value = '';
+  alert(`✓ Thanks for subscribing ${email}!\nWe'll send you weekly specials and baking tips.`);
 }
 
 // MODAL FUNCTIONS
@@ -755,6 +1720,9 @@ function renderGallery(){
 
 // INIT
 window.addEventListener('DOMContentLoaded', ()=>{
+  // Load current user
+  loadCurrentUser();
+  
   // Logo
   const logoDisplay = document.getElementById('logo-display');
   logoDisplay.style.cursor = 'pointer';
@@ -825,4 +1793,12 @@ window.addEventListener('DOMContentLoaded', ()=>{
       if(target){ e.preventDefault(); target.scrollIntoView({behavior:'smooth'}); }
     });
   });
+  
+  // Initialize quick wins
+  displayPopularItems();
+  displayTestimonials();
+  displayAboutSection();
+  
+  // Update auth UI
+  updateAuthUI();
 });
