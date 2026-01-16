@@ -3,6 +3,36 @@
 let currentAdmin = null;
 let currentTestimonialRating = 0;
 
+// MOBILE MENU TOGGLE
+function toggleMobileMenu(){
+  const nav = document.querySelector('.site-nav');
+  nav.classList.toggle('mobile-open');
+}
+
+// Close mobile menu when link is clicked
+document.addEventListener('DOMContentLoaded', function(){
+  const navLinks = document.querySelectorAll('.site-nav a');
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(){
+      const nav = document.querySelector('.site-nav');
+      nav.classList.remove('mobile-open');
+    });
+  });
+  
+  // Show/hide mobile menu button based on screen size
+  function updateMobileMenuButton(){
+    const btn = document.getElementById('mobile-menu-btn');
+    if(window.innerWidth <= 768){
+      btn.style.display = 'inline-block';
+    } else {
+      btn.style.display = 'none';
+      document.querySelector('.site-nav').classList.remove('mobile-open');
+    }
+  }
+  updateMobileMenuButton();
+  window.addEventListener('resize', updateMobileMenuButton);
+});
+
 // FORGOT PASSWORD FUNCTIONS
 function openForgotPasswordModal(){
   document.getElementById('forgot-email').value = '';
@@ -629,6 +659,14 @@ function generateCakeId(){
 function loadCakes(){
   try{
     cakes = JSON.parse(localStorage.getItem('amg_cakes')) || [];
+    // Add sample cakes on first visit
+    if(cakes.length === 0){
+      addCake('Chocolate Cake', 600, 'Rich chocolate layer cake with premium chocolate frosting and ganache topping', null);
+      addCake('Vanilla Cheesecake', 750, 'Creamy cheesecake with vanilla bean flavor and graham cracker crust', null);
+      addCake('Red Velvet Cake', 700, 'Classic red velvet with cream cheese frosting and elegant appearance', null);
+      addCake('Butterscotch Dream', 650, 'Moist butterscotch cake with butterscotch cream filling and caramel drizzle', null);
+      cakes = JSON.parse(localStorage.getItem('amg_cakes')) || [];
+    }
   }catch(e){
     cakes = [];
   }
@@ -671,6 +709,15 @@ function deleteCake(id){
 function loadProducts(){
   try{
     products = JSON.parse(localStorage.getItem('amg_products')) || [];
+    // Add sample products on first visit
+    if(products.length === 0){
+      addProduct('Croissant', 80, 'Buttery, flaky croissant with layers of puff pastry', null);
+      addProduct('Almond Bread', 120, 'Whole wheat bread with almond pieces and healthy grains', null);
+      addProduct('Chocolate Donut', 50, 'Glazed chocolate donut with sprinkles', null);
+      addProduct('Cappuccino', 150, 'Freshly brewed cappuccino with steamed milk and foam', null);
+      addProduct('Blueberry Muffin', 100, 'Fresh blueberry muffin with crispy top', null);
+      products = JSON.parse(localStorage.getItem('amg_products')) || [];
+    }
   }catch(e){
     products = [];
   }
@@ -1588,6 +1635,14 @@ let galleryPhotos = [];
 function loadGalleryPhotos(){
   try{
     galleryPhotos = JSON.parse(localStorage.getItem('amg_gallery_photos')) || [];
+    // Add sample gallery photos on first visit
+    if(galleryPhotos.length === 0){
+      addGalleryPhoto('Fresh Croissants', 'Golden, buttery croissants fresh from the oven every morning');
+      addGalleryPhoto('Birthday Cakes', 'Custom designed cakes for your special celebrations');
+      addGalleryPhoto('Pastry Display', 'Variety of fresh pastries and baked goods daily');
+      addGalleryPhoto('Coffee & Cakes', 'Enjoy our premium coffee with freshly baked treats');
+      galleryPhotos = JSON.parse(localStorage.getItem('amg_gallery_photos')) || [];
+    }
   }catch(e){
     galleryPhotos = [];
   }
