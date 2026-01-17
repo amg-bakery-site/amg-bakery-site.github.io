@@ -400,7 +400,9 @@ function doAdminLogout(){
   currentAdmin = null;
   localStorage.removeItem('amg_admin');
   alert('Admin logged out');
-  document.getElementById('admin-btn').style.display = 'none';
+  // Keep admin button visible for login
+  document.getElementById('admin-btn').innerHTML = '⚙️ Admin Login';
+  document.getElementById('admin-btn').onclick = ()=> openAdminModal();
   document.querySelectorAll('section').forEach(s=> s.style.display = 'block');
   document.getElementById('admin-dashboard').style.display = 'none';
   toggleAdminButtons();
@@ -1489,6 +1491,11 @@ function updateAuthUI(){
   const loyaltyBtn = document.getElementById('loyalty-btn');
   const adminBtn = document.getElementById('admin-btn');
   
+  // ALWAYS show admin button - it's for accessing admin login
+  adminBtn.style.display = 'inline-block';
+  adminBtn.innerHTML = '⚙️ Admin Login';
+  adminBtn.onclick = ()=> openAdminModal();
+  
   // Check if admin is logged in
   let admin = null;
   try{ admin = JSON.parse(localStorage.getItem('amg_admin')); }catch(e){}
@@ -1496,7 +1503,6 @@ function updateAuthUI(){
   if(admin){
     authBtn.style.display = 'none';
     signupBtn.style.display = 'none';
-    adminBtn.style.display = 'inline-block';
     adminBtn.innerHTML = '⚙️ Admin Dashboard';
     adminBtn.onclick = ()=> showAdminDashboard();
     loyaltyBtn.style.display = 'none';
@@ -1506,7 +1512,6 @@ function updateAuthUI(){
     authBtn.onclick = ()=>{ showAccountMenu(); };
     authBtn.style.display = 'inline-block';
     signupBtn.style.display = 'none';
-    adminBtn.style.display = 'none';
     
     if(loyaltyBtn){
       loyaltyBtn.style.display = 'inline-block';
@@ -1518,7 +1523,6 @@ function updateAuthUI(){
     authBtn.onclick = ()=>{ openLoginModal(); };
     authBtn.style.display = 'inline-block';
     signupBtn.style.display = 'inline-block';
-    adminBtn.style.display = 'none';
     
     if(loyaltyBtn) loyaltyBtn.style.display = 'none';
   }
