@@ -390,7 +390,7 @@
         <p style="text-align:center;color:var(--muted);margin-bottom:1.5rem">Browse and order custom cakes. Add unlimited cakes with your own photos, prices, and descriptions.</p>
         
         <div style="text-align:center;margin-bottom:2rem">
-          <button class="btn primary" onclick="openAddCakeModal()">+ Add New Cake</button>
+          <button class="btn primary" id="addCakeBtn" onclick="openAddCakeModal()">+ Add New Cake</button>
         </div>
         
         <div id="menu-content" class="grid"></div>
@@ -404,7 +404,7 @@
         <p style="text-align:center;color:var(--muted);margin-bottom:1.5rem">Browse breads, pastries, ice cream, coffee & more. Add unlimited products with your own photos, prices, and descriptions.</p>
         
         <div style="text-align:center;margin-bottom:2rem">
-          <button class="btn primary" onclick="openAddProductModal()">+ Add Product</button>
+          <button class="btn primary" id="addProductBtn" onclick="openAddProductModal()">+ Add Product</button>
         </div>
         
         <div id="basic-menu-content" class="grid"></div>
@@ -476,7 +476,7 @@
         <p style="text-align:center;color:var(--muted);margin-bottom:1.5rem">Share your bakery story with photos and captions. Add unlimited gallery photos.</p>
         
         <div style="text-align:center;margin-bottom:2rem">
-          <button class="btn primary" onclick="openAddGalleryModal()">+ Add Gallery Photo</button>
+          <button class="btn primary" id="addGalleryBtn" onclick="openAddGalleryModal()">+ Add Gallery Photo</button>
         </div>
         
         <div class="gallery" id="gallery-grid"></div>
@@ -490,7 +490,7 @@
         <p style="text-align:center;color:var(--muted);margin-bottom:1.5rem">Watch our bakery videos and behind-the-scenes content</p>
         
         <div style="text-align:center;margin-bottom:2rem">
-          <button class="btn primary" onclick="openAddVideoModal()">+ Add Video</button>
+          <button class="btn primary" id="addVideoBtn" onclick="openAddVideoModal()">+ Add Video</button>
         </div>
         
         <div class="grid" id="videos-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">

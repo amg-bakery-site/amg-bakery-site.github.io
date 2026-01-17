@@ -180,6 +180,7 @@ function doAdminLogin(){
     localStorage.setItem('amg_admin', JSON.stringify(currentAdmin));
     alert('✓ Admin login successful!');
     document.getElementById('admin-modal').classList.remove('active');
+    toggleAdminButtons();
     showAdminDashboard();
   } else {
     alert('❌ Invalid admin credentials');
@@ -398,7 +399,22 @@ function doAdminLogout(){
   document.getElementById('admin-btn').style.display = 'none';
   document.querySelectorAll('section').forEach(s=> s.style.display = 'block');
   document.getElementById('admin-dashboard').style.display = 'none';
+  toggleAdminButtons();
   window.scrollTo(0, 0);
+}
+
+function toggleAdminButtons(){
+  const addCakeBtn = document.getElementById('addCakeBtn');
+  const addProductBtn = document.getElementById('addProductBtn');
+  const addGalleryBtn = document.getElementById('addGalleryBtn');
+  const addVideoBtn = document.getElementById('addVideoBtn');
+  
+  const display = currentAdmin ? 'inline-block' : 'none';
+  
+  if(addCakeBtn) addCakeBtn.style.display = display;
+  if(addProductBtn) addProductBtn.style.display = display;
+  if(addGalleryBtn) addGalleryBtn.style.display = display;
+  if(addVideoBtn) addVideoBtn.style.display = display;
 }
 
 // TESTIMONIALS FUNCTIONS
@@ -946,8 +962,12 @@ function updateCake(id, name, price, desc, imageDataUri){
 }
 
 function deleteCake(id){
+  if(!currentAdmin){ alert('❌ Only admin can delete cakes'); return; }
+  if(!confirm('Delete this cake?')) return;
   cakes = cakes.filter(c=>c.id!==id);
   saveCakes();
+  renderCakeGallery();
+  alert('✓ Cake deleted');
 }
 
 // PRODUCTS STORAGE (same structure as cakes)
@@ -1018,8 +1038,12 @@ function updateProduct(id, name, price, desc, imageDataUri){
 }
 
 function deleteProduct(id){
+  if(!currentAdmin){ alert('❌ Only admin can delete products'); return; }
+  if(!confirm('Delete this product?')) return;
   products = products.filter(p=>p.id!==id);
   saveProducts();
+  renderProductGallery();
+  alert('✓ Product deleted');
 }
 
 // RENDER CAKE GALLERY
@@ -1078,35 +1102,37 @@ function renderCakeGallery(){
       card.appendChild(descDiv);
     }
 
-    // EDIT & DELETE BUTTONS
-    const editRow = document.createElement('div');
-    editRow.style.display = 'flex';
-    editRow.style.gap = '0.5rem';
-    editRow.style.marginBottom = '0.8rem';
+    // EDIT & DELETE BUTTONS (ADMIN ONLY)
+    if(currentAdmin){
+      const editRow = document.createElement('div');
+      editRow.style.display = 'flex';
+      editRow.style.gap = '0.5rem';
+      editRow.style.marginBottom = '0.8rem';
 
-    const editBtn = document.createElement('button');
-    editBtn.className = 'edit-price';
-    editBtn.textContent = '✏️ Edit';
-    editBtn.type = 'button';
-    editBtn.style.flex = '1';
-    editBtn.addEventListener('click', ()=> openEditCakeModal(cake));
-    editRow.appendChild(editBtn);
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-price';
+      editBtn.textContent = '✏️ Edit';
+      editBtn.type = 'button';
+      editBtn.style.flex = '1';
+      editBtn.addEventListener('click', ()=> openEditCakeModal(cake));
+      editRow.appendChild(editBtn);
 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'edit-price';
-    delBtn.textContent = '🗑️ Delete';
-    delBtn.type = 'button';
-    delBtn.style.color = 'red';
-    delBtn.addEventListener('click', ()=>{
-      if(confirm(`Delete "${cake.name}"?`)){
-        deleteCake(cake.id);
-        renderCakeGallery();
-        updateCartUI();
-      }
-    });
-    editRow.appendChild(delBtn);
+      const delBtn = document.createElement('button');
+      delBtn.className = 'edit-price';
+      delBtn.textContent = '🗑️ Delete';
+      delBtn.type = 'button';
+      delBtn.style.color = 'red';
+      delBtn.addEventListener('click', ()=>{
+        if(confirm(`Delete "${cake.name}"?`)){
+          deleteCake(cake.id);
+          renderCakeGallery();
+          updateCartUI();
+        }
+      });
+      editRow.appendChild(delBtn);
 
-    card.appendChild(editRow);
+      card.appendChild(editRow);
+    }
 
     // ADD TO CART
     const actions = document.createElement('div');
@@ -1180,35 +1206,37 @@ function renderProductGallery(){
       card.appendChild(descDiv);
     }
 
-    // EDIT & DELETE BUTTONS
-    const editRow = document.createElement('div');
-    editRow.style.display = 'flex';
-    editRow.style.gap = '0.5rem';
-    editRow.style.marginBottom = '0.8rem';
+    // EDIT & DELETE BUTTONS (ADMIN ONLY)
+    if(currentAdmin){
+      const editRow = document.createElement('div');
+      editRow.style.display = 'flex';
+      editRow.style.gap = '0.5rem';
+      editRow.style.marginBottom = '0.8rem';
 
-    const editBtn = document.createElement('button');
-    editBtn.className = 'edit-price';
-    editBtn.textContent = '✏️ Edit';
-    editBtn.type = 'button';
-    editBtn.style.flex = '1';
-    editBtn.addEventListener('click', ()=> openEditProductModal(prod));
-    editRow.appendChild(editBtn);
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-price';
+      editBtn.textContent = '✏️ Edit';
+      editBtn.type = 'button';
+      editBtn.style.flex = '1';
+      editBtn.addEventListener('click', ()=> openEditProductModal(prod));
+      editRow.appendChild(editBtn);
 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'edit-price';
-    delBtn.textContent = '🗑️ Delete';
-    delBtn.type = 'button';
-    delBtn.style.color = 'red';
-    delBtn.addEventListener('click', ()=>{
-      if(confirm(`Delete "${prod.name}"?`)){
-        deleteProduct(prod.id);
-        renderProductGallery();
-        updateCartUI();
-      }
-    });
-    editRow.appendChild(delBtn);
+      const delBtn = document.createElement('button');
+      delBtn.className = 'edit-price';
+      delBtn.textContent = '🗑️ Delete';
+      delBtn.type = 'button';
+      delBtn.style.color = 'red';
+      delBtn.addEventListener('click', ()=>{
+        if(confirm(`Delete "${prod.name}"?`)){
+          deleteProduct(prod.id);
+          renderProductGallery();
+          updateCartUI();
+        }
+      });
+      editRow.appendChild(delBtn);
 
-    card.appendChild(editRow);
+      card.appendChild(editRow);
+    }
 
     // ADD TO CART
     const actions = document.createElement('div');
@@ -1490,6 +1518,8 @@ function updateAuthUI(){
     
     if(loyaltyBtn) loyaltyBtn.style.display = 'none';
   }
+  
+  toggleAdminButtons();
 }
 
 // ACCOUNT MENU DROPDOWN
@@ -1775,6 +1805,7 @@ function subscribeNewsletter(){
 
 // MODAL FUNCTIONS
 function openAddCakeModal(){
+  if(!currentAdmin){ alert('❌ Only admin can add cakes'); return; }
   document.getElementById('cake-name').value = '';
   document.getElementById('cake-price').value = '';
   document.getElementById('cake-desc').value = '';
@@ -1785,6 +1816,7 @@ function openAddCakeModal(){
 }
 
 function openEditCakeModal(cake){
+  if(!currentAdmin){ alert('❌ Only admin can edit cakes'); return; }
   document.getElementById('cake-name').value = cake.name;
   document.getElementById('cake-price').value = cake.price;
   document.getElementById('cake-desc').value = cake.desc || '';
@@ -1848,6 +1880,7 @@ async function saveCake(){
 
 // PRODUCT MODAL FUNCTIONS
 function openAddProductModal(){
+  if(!currentAdmin){ alert('❌ Only admin can add products'); return; }
   document.getElementById('product-name').value = '';
   document.getElementById('product-price').value = '';
   document.getElementById('product-desc').value = '';
@@ -1858,6 +1891,7 @@ function openAddProductModal(){
 }
 
 function openEditProductModal(product){
+  if(!currentAdmin){ alert('❌ Only admin can edit products'); return; }
   document.getElementById('product-name').value = product.name;
   document.getElementById('product-price').value = product.price;
   document.getElementById('product-desc').value = product.desc || '';
@@ -1921,6 +1955,7 @@ async function saveProduct(){
 
 // GALLERY MODAL FUNCTIONS
 function openAddGalleryModal(){
+  if(!currentAdmin){ alert('❌ Only admin can add gallery photos'); return; }
   document.getElementById('gallery-title').value = '';
   document.getElementById('gallery-desc').value = '';
   document.getElementById('gallery-photo').value = '';
@@ -1930,6 +1965,7 @@ function openAddGalleryModal(){
 }
 
 function openEditGalleryModal(photo){
+  if(!currentAdmin){ alert('❌ Only admin can edit gallery photos'); return; }
   document.getElementById('gallery-title').value = photo.title;
   document.getElementById('gallery-desc').value = photo.description || '';
   document.getElementById('gallery-photo').value = '';
@@ -2122,8 +2158,12 @@ function updateGalleryPhoto(id, title, description, imageDataUri){
 }
 
 function deleteGalleryPhoto(id){
+  if(!currentAdmin){ alert('❌ Only admin can delete gallery photos'); return; }
+  if(!confirm('Delete this photo?')) return;
   galleryPhotos = galleryPhotos.filter(p=>p.id!==id);
   saveGalleryPhotos();
+  renderGallery();
+  alert('✓ Photo deleted');
 }
 
 function getGalleryImage(id){
@@ -2197,35 +2237,37 @@ function renderGallery(){
       div.appendChild(desc);
     }
     
-    // EDIT & DELETE BUTTONS
-    const actions = document.createElement('div');
-    actions.style.display = 'flex';
-    actions.style.gap = '0.5rem';
-    actions.style.marginBottom = '0.5rem';
-    
-    const editBtn = document.createElement('button');
-    editBtn.className = 'edit-price';
-    editBtn.textContent = '✏️ Edit';
-    editBtn.type = 'button';
-    editBtn.style.flex = '1';
-    editBtn.addEventListener('click', ()=> openEditGalleryModal(photo));
-    actions.appendChild(editBtn);
-    
-    const delBtn = document.createElement('button');
-    delBtn.className = 'edit-price';
-    delBtn.textContent = '🗑️ Delete';
-    delBtn.type = 'button';
-    delBtn.style.color = 'red';
-    delBtn.style.flex = '1';
-    delBtn.addEventListener('click', ()=>{
-      if(confirm(`Delete "${photo.title}"?`)){
-        deleteGalleryPhoto(photo.id);
-        renderGallery();
-      }
-    });
-    actions.appendChild(delBtn);
-    
-    div.appendChild(actions);
+    // EDIT & DELETE BUTTONS (ADMIN ONLY)
+    if(currentAdmin){
+      const actions = document.createElement('div');
+      actions.style.display = 'flex';
+      actions.style.gap = '0.5rem';
+      actions.style.marginBottom = '0.5rem';
+      
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-price';
+      editBtn.textContent = '✏️ Edit';
+      editBtn.type = 'button';
+      editBtn.style.flex = '1';
+      editBtn.addEventListener('click', ()=> openEditGalleryModal(photo));
+      actions.appendChild(editBtn);
+      
+      const delBtn = document.createElement('button');
+      delBtn.className = 'edit-price';
+      delBtn.textContent = '🗑️ Delete';
+      delBtn.type = 'button';
+      delBtn.style.color = 'red';
+      delBtn.style.flex = '1';
+      delBtn.addEventListener('click', ()=>{
+        if(confirm(`Delete "${photo.title}"?`)){
+          deleteGalleryPhoto(photo.id);
+          renderGallery();
+        }
+      });
+      actions.appendChild(delBtn);
+      
+      div.appendChild(actions);
+    }
     gallery.appendChild(div);
   });
 }
@@ -2282,8 +2324,12 @@ function addVideo(title, description, url, category){
 }
 
 function deleteVideo(id){
+  if(!currentAdmin){ alert('❌ Only admin can delete videos'); return; }
+  if(!confirm('Delete this video?')) return;
   videos = videos.filter(v => v.id !== id);
   saveVideos();
+  loadVideos();
+  alert('✓ Video deleted');
 }
 
 function updateVideo(id, title, description, url, category){
@@ -2307,6 +2353,7 @@ function updateVideo(id, title, description, url, category){
 }
 
 function openAddVideoModal(){
+  if(!currentAdmin){ alert('❌ Only admin can add videos'); return; }
   document.getElementById('add-video-modal').dataset.editId = '';
   document.getElementById('add-video-modal').querySelector('h3').textContent = 'Add Video';
   document.getElementById('video-title').value = '';
@@ -2422,35 +2469,37 @@ function renderVideos(){
       div.appendChild(desc);
     }
     
-    // BUTTONS
-    const actions = document.createElement('div');
-    actions.style.display = 'flex';
-    actions.style.gap = '0.5rem';
-    actions.style.marginTop = '1rem';
-    
-    const editBtn = document.createElement('button');
-    editBtn.className = 'edit-price';
-    editBtn.textContent = '✏️ Edit';
-    editBtn.type = 'button';
-    editBtn.style.flex = '1';
-    editBtn.addEventListener('click', () => openEditVideoModal(video));
-    actions.appendChild(editBtn);
-    
-    const delBtn = document.createElement('button');
-    delBtn.className = 'edit-price';
-    delBtn.textContent = '🗑️ Delete';
-    delBtn.type = 'button';
-    delBtn.style.color = 'red';
-    delBtn.style.flex = '1';
-    delBtn.addEventListener('click', () => {
-      if(confirm(`Delete "${video.title}"?`)){
-        deleteVideo(video.id);
-        renderVideos();
-      }
-    });
-    actions.appendChild(delBtn);
-    
-    div.appendChild(actions);
+    // BUTTONS (ADMIN ONLY)
+    if(currentAdmin){
+      const actions = document.createElement('div');
+      actions.style.display = 'flex';
+      actions.style.gap = '0.5rem';
+      actions.style.marginTop = '1rem';
+      
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-price';
+      editBtn.textContent = '✏️ Edit';
+      editBtn.type = 'button';
+      editBtn.style.flex = '1';
+      editBtn.addEventListener('click', () => openEditVideoModal(video));
+      actions.appendChild(editBtn);
+      
+      const delBtn = document.createElement('button');
+      delBtn.className = 'edit-price';
+      delBtn.textContent = '🗑️ Delete';
+      delBtn.type = 'button';
+      delBtn.style.color = 'red';
+      delBtn.style.flex = '1';
+      delBtn.addEventListener('click', () => {
+        if(confirm(`Delete "${video.title}"?`)){
+          deleteVideo(video.id);
+          renderVideos();
+        }
+      });
+      actions.appendChild(delBtn);
+      
+      div.appendChild(actions);
+    }
     grid.appendChild(div);
   });
 }
