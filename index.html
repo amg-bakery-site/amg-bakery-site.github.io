@@ -42,7 +42,7 @@
 
       <button id="signup-btn" class="cart-btn" onclick="openRegisterModal()" style="margin-right:0.5rem;background:var(--accent);color:var(--primary)">📝 Sign Up</button>
 
-      <button id="admin-btn" class="cart-btn" onclick="openAdminModal()" style="margin-right:0.5rem;display:inline-block;background:#9333EA;color:white;font-weight:600">⚙️ Admin Login</button>
+      <button id="admin-btn" class="cart-btn" onclick="openAdminModal()" style="margin-right:0.5rem;display:none;background:#9333EA;color:white;font-weight:600">⚙️ Admin Login</button>
 
       <button class="cart-btn" id="cart-btn" aria-label="Open cart">🛒 Cart (<span id="cart-count">0</span>)</button>
     </div>
@@ -115,35 +115,86 @@
       <span class="modal-close" onclick="document.getElementById('forgot-password-modal').classList.remove('active')">&times;</span>
       <h3>Reset Your Password</h3>
       
-      <div id="forgot-step1" style="display:block">
-        <label style="display:block;margin-bottom:1rem">
-          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Email Address *</span>
-          <input type="email" id="forgot-email" placeholder="your@email.com" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
-        </label>
-        <button class="btn primary" style="width:100%" onclick="verifyEmailForPassword()">Find Account</button>
-        <p style="text-align:center;margin-top:1rem;color:var(--muted);font-size:0.9rem">
-          <a href="#" onclick="openLoginModal();return false" style="color:var(--primary);text-decoration:none">← Back to Login</a>
-        </p>
+      <!-- Tab to choose user type -->
+      <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;border-bottom:2px solid var(--border)">
+        <button id="forgot-customer-tab" class="btn" style="flex:1;background:none;border:none;padding:1rem;border-bottom:3px solid var(--accent);color:var(--primary);font-weight:600;cursor:pointer" onclick="switchForgotTab('customer')">👤 Customer</button>
+        <button id="forgot-admin-tab" class="btn" style="flex:1;background:none;border:none;padding:1rem;border-bottom:none;color:var(--muted);font-weight:600;cursor:pointer" onclick="switchForgotTab('admin')">⚙️ Admin</button>
       </div>
 
-      <div id="forgot-step2" style="display:none">
-        <label style="display:block;margin-bottom:1rem">
-          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Security Question</span>
-          <p style="margin:0.3rem 0;color:var(--muted)" id="security-question">What is your mother's maiden name?</p>
-        </label>
-        <label style="display:block;margin-bottom:1rem">
-          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Your Answer *</span>
-          <input type="text" id="security-answer" placeholder="Enter your answer" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
-        </label>
-        <label style="display:block;margin-bottom:1rem">
-          <span style="font-weight:600;display:block;margin-bottom:0.3rem">New Password *</span>
-          <input type="password" id="new-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
-        </label>
-        <label style="display:block;margin-bottom:1rem">
-          <span style="font-weight:600;display:block;margin-bottom:0.3rem">Confirm Password *</span>
-          <input type="password" id="confirm-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
-        </label>
-        <button class="btn primary" style="width:100%" onclick="resetPassword()">Reset Password</button>
+      <!-- CUSTOMER PASSWORD RESET -->
+      <div id="forgot-customer" style="display:block">
+        <div id="forgot-step1" style="display:block">
+          <label style="display:block;margin-bottom:1rem">
+            <span style="font-weight:600;display:block;margin-bottom:0.3rem">Email Address *</span>
+            <input type="email" id="forgot-email" placeholder="your@email.com" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+          </label>
+          <button class="btn primary" style="width:100%" onclick="verifyEmailForPassword()">Find Account</button>
+          <p style="text-align:center;margin-top:1rem;color:var(--muted);font-size:0.9rem">
+            <a href="#" onclick="openLoginModal();return false" style="color:var(--primary);text-decoration:none">← Back to Login</a>
+          </p>
+        </div>
+
+        <div id="forgot-step2" style="display:none">
+          <label style="display:block;margin-bottom:1rem">
+            <span style="font-weight:600;display:block;margin-bottom:0.3rem">Security Question</span>
+            <p style="margin:0.3rem 0;color:var(--muted)" id="security-question">What is your mother's maiden name?</p>
+          </label>
+          <label style="display:block;margin-bottom:1rem">
+            <span style="font-weight:600;display:block;margin-bottom:0.3rem">Your Answer *</span>
+            <input type="text" id="security-answer" placeholder="Enter your answer" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+          </label>
+          <label style="display:block;margin-bottom:1rem">
+            <span style="font-weight:600;display:block;margin-bottom:0.3rem">New Password *</span>
+            <input type="password" id="new-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+          </label>
+          <label style="display:block;margin-bottom:1rem">
+            <span style="font-weight:600;display:block;margin-bottom:0.3rem">Confirm Password *</span>
+            <input type="password" id="confirm-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+          </label>
+          <button class="btn primary" style="width:100%" onclick="resetPassword()">Reset Password</button>
+        </div>
+      </div>
+
+      <!-- ADMIN PASSWORD RESET -->
+      <div id="forgot-admin" style="display:none">
+        <div id="admin-forgot-step1" style="display:block">
+          <p style="color:var(--muted);margin-bottom:1rem;text-align:center">
+            Enter your admin email to verify your identity and reset your password.
+          </p>
+          <label style="display:block;margin-bottom:1rem">
+            <span style="font-weight:600;display:block;margin-bottom:0.3rem">Admin Email *</span>
+            <input type="email" id="admin-forgot-email" placeholder="admin@amgbakery.com" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+          </label>
+          <button class="btn primary" style="width:100%" onclick="verifyAdminForPassword()">Find Admin Account</button>
+          <p style="text-align:center;margin-top:1rem;color:var(--muted);font-size:0.9rem">
+            <a href="#" onclick="openLoginModal();return false" style="color:var(--primary);text-decoration:none">← Back to Login</a>
+          </p>
+        </div>
+
+        <div id="admin-forgot-step2" style="display:none">
+          <p style="color:var(--muted);margin-bottom:1rem;text-align:center">
+            📧 A recovery link has been sent to your recovery email address.
+          </p>
+          <p style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:1rem;color:var(--primary);font-weight:600;text-align:center" id="recovery-email-display">
+            ordersamgbakery@gmail.com
+          </p>
+          <label style="display:block;margin-bottom:1rem">
+            <span style="font-weight:600;display:block;margin-bottom:0.3rem">Recovery Code (from email) *</span>
+            <input type="text" id="admin-recovery-code" placeholder="Enter the code from your email" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+          </label>
+          <label style="display:block;margin-bottom:1rem">
+            <span style="font-weight:600;display:block;margin-bottom:0.3rem">New Admin Password *</span>
+            <input type="password" id="admin-new-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+          </label>
+          <label style="display:block;margin-bottom:1.5rem">
+            <span style="font-weight:600;display:block;margin-bottom:0.3rem">Confirm Password *</span>
+            <input type="password" id="admin-confirm-password" placeholder="••••••••" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+          </label>
+          <div style="display:flex;gap:0.5rem">
+            <button class="btn primary" style="flex:1" onclick="resetAdminPassword()">Reset Admin Password</button>
+            <button class="btn outline" style="flex:1" onclick="document.getElementById('admin-forgot-step2').style.display='none';document.getElementById('admin-forgot-step1').style.display='block'">Back</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -614,6 +665,7 @@
             <button class="btn outline" onclick="showAdminTab('orders')" id="tab-orders">📋 Orders</button>
             <button class="btn outline" onclick="showAdminTab('customers')" id="tab-customers">👥 Customers</button>
             <button class="btn outline" onclick="showAdminTab('sales')" id="tab-sales">💰 Sales</button>
+            <button class="btn outline" onclick="showAdminTab('settings')" id="tab-settings">⚙️ Settings</button>
           </div>
 
           <!-- OVERVIEW TAB -->
@@ -683,6 +735,73 @@
             <div id="admin-sales-items"></div>
             <h4 style="color:var(--primary);margin-top:2rem">Recent Sales</h4>
             <div id="admin-sales-history"></div>
+          </div>
+
+          <!-- SETTINGS TAB -->
+          <div id="admin-settings" style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:none">
+            <h3 style="color:var(--primary);margin-top:0">⚙️ Admin Settings</h3>
+            
+            <!-- Admin Email Section -->
+            <div style="background:var(--light-bg);padding:1.5rem;border-radius:8px;margin-bottom:2rem;border-left:4px solid var(--accent)">
+              <h4 style="color:var(--primary);margin-top:0">Admin Email & Password Recovery</h4>
+              
+              <label style="display:block;margin-bottom:1rem">
+                <span style="font-weight:600;display:block;margin-bottom:0.3rem">Admin Email Address</span>
+                <input type="email" id="admin-email-setting" placeholder="admin@amgbakery.com" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+              </label>
+              
+              <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem">
+                📧 This email is used for password recovery. Default: ordersamgbakery@gmail.com
+              </p>
+              
+              <button class="btn primary" onclick="updateAdminEmail()" style="margin-right:0.5rem">💾 Save Email</button>
+              <button class="btn outline" onclick="loadAdminSettings()">↻ Refresh</button>
+              
+              <div id="admin-email-status" style="margin-top:1rem;padding:0.8rem;border-radius:6px;display:none"></div>
+            </div>
+
+            <!-- Password Change Section -->
+            <div style="background:var(--light-bg);padding:1.5rem;border-radius:8px;margin-bottom:2rem;border-left:4px solid #f59e0b">
+              <h4 style="color:var(--primary);margin-top:0">Change Admin Password</h4>
+              
+              <p style="background:#fffbeb;padding:0.8rem;border-radius:6px;border-left:4px solid #f59e0b;color:var(--primary);margin-bottom:1rem;font-size:0.9rem">
+                💡 <strong>Tip:</strong> If you forgot your current password, click "Reset to Default" button below to reset it to "password123", then change it to a new password.
+              </p>
+              
+              <label style="display:block;margin-bottom:1rem">
+                <span style="font-weight:600;display:block;margin-bottom:0.3rem">Current Password *</span>
+                <input type="password" id="current-password" placeholder="Enter your current password" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+                <small style="color:var(--muted);display:block;margin-top:0.3rem">🔒 Default: password123</small>
+              </label>
+              
+              <label style="display:block;margin-bottom:1rem">
+                <span style="font-weight:600;display:block;margin-bottom:0.3rem">New Password *</span>
+                <input type="password" id="new-admin-password" placeholder="Enter new password (6+ characters)" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+              </label>
+              
+              <label style="display:block;margin-bottom:1.5rem">
+                <span style="font-weight:600;display:block;margin-bottom:0.3rem">Confirm New Password *</span>
+                <input type="password" id="confirm-admin-password" placeholder="Re-enter new password" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+              </label>
+              
+              <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+                <button class="btn primary" style="flex:1" onclick="changeAdminPassword()">🔐 Change Password</button>
+                <button class="btn outline" style="flex:1" onclick="resetPasswordToDefault()">↻ Reset to Default</button>
+              </div>
+              
+              <div id="password-change-status" style="margin-top:1rem;padding:0.8rem;border-radius:6px;display:none"></div>
+            </div>
+
+            <!-- Security Info Section -->
+            <div style="background:#fef3c7;padding:1.5rem;border-radius:8px;border-left:4px solid #f59e0b">
+              <h4 style="color:var(--primary);margin-top:0">🔒 Security Information</h4>
+              <ul style="color:var(--muted);margin:0;padding-left:1.5rem">
+                <li>Current Admin Email: <span style="font-weight:600;color:var(--primary)" id="current-admin-email">-</span></li>
+                <li>Password Recovery Email: <span style="font-weight:600;color:var(--primary)" id="recovery-email">-</span></li>
+                <li>Passwords are hashed for security</li>
+                <li>Use "Forgot Password" button in login to recover account</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>

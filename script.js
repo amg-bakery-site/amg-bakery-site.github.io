@@ -118,7 +118,43 @@ function openForgotPasswordModal(){
   document.getElementById('forgot-email').value = '';
   document.getElementById('forgot-step1').style.display = 'block';
   document.getElementById('forgot-step2').style.display = 'none';
+  
+  // Reset admin recovery
+  document.getElementById('admin-forgot-email').value = '';
+  document.getElementById('admin-recovery-code').value = '';
+  document.getElementById('admin-new-password').value = '';
+  document.getElementById('admin-confirm-password').value = '';
+  document.getElementById('admin-forgot-step1').style.display = 'block';
+  document.getElementById('admin-forgot-step2').style.display = 'none';
+  
+  // Set default to customer tab
+  switchForgotTab('customer');
+  
   document.getElementById('forgot-password-modal').classList.add('active');
+}
+
+function switchForgotTab(tab){
+  if(tab === 'customer'){
+    document.getElementById('forgot-customer').style.display = 'block';
+    document.getElementById('forgot-admin').style.display = 'none';
+    document.getElementById('forgot-customer-tab').style.borderBottomColor = 'var(--accent)';
+    document.getElementById('forgot-customer-tab').style.color = 'var(--primary)';
+    document.getElementById('forgot-admin-tab').style.borderBottomColor = 'transparent';
+    document.getElementById('forgot-admin-tab').style.color = 'var(--muted)';
+  } else {
+    document.getElementById('forgot-customer').style.display = 'none';
+    document.getElementById('forgot-admin').style.display = 'block';
+    document.getElementById('forgot-customer-tab').style.borderBottomColor = 'transparent';
+    document.getElementById('forgot-customer-tab').style.color = 'var(--muted)';
+    document.getElementById('forgot-admin-tab').style.borderBottomColor = 'var(--accent)';
+    document.getElementById('forgot-admin-tab').style.color = 'var(--primary)';
+    
+    // Show recovery email
+    let adminSettings = {};
+    try{ adminSettings = JSON.parse(localStorage.getItem('amg_admin_settings')) || {}; }catch(e){}
+    const recoveryEmail = adminSettings.recoveryEmail || 'ordersamgbakery@gmail.com';
+    document.getElementById('recovery-email-display').textContent = recoveryEmail;
+  }
 }
 
 function verifyEmailForPassword(){
@@ -161,6 +197,57 @@ function resetPassword(){
   openLoginModal();
 }
 
+// ============ ADMIN PASSWORD RECOVERY ============
+
+function verifyAdminForPassword(){
+  const email = document.getElementById('admin-forgot-email').value.trim();
+  if(!email){ alert('❌ Please enter your email'); return; }
+  
+  const adminData = JSON.parse(localStorage.getItem('amg_admin') || '{}');
+  if(!adminData.email || adminData.email !== email){ 
+    alert('❌ This is not an admin email. Please check and try again');
+    return;
+  }
+  
+  // Generate recovery code and store it temporarily
+  const recoveryCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  sessionStorage.setItem('amg_admin_recovery_code', recoveryCode);
+  sessionStorage.setItem('amg_recovery_email', email);
+  
+  // Show code to user (in demo, display it)
+  alert('📧 Recovery Code: ' + recoveryCode + '\n\n(In production, this would be sent to your email)');
+  
+  document.getElementById('admin-forgot-step1').style.display = 'none';
+  document.getElementById('admin-forgot-step2').style.display = 'block';
+}
+
+function resetAdminPassword(){
+  const code = document.getElementById('admin-recovery-code').value.trim();
+  const newPass = document.getElementById('admin-new-password').value;
+  const confirmPass = document.getElementById('admin-confirm-password').value;
+  const email = sessionStorage.getItem('amg_recovery_email');
+  
+  if(!code || !newPass || !confirmPass){ alert('❌ Please fill all fields'); return; }
+  if(newPass.length < 6){ alert('❌ Password must be at least 6 characters'); return; }
+  if(newPass !== confirmPass){ alert('❌ Passwords do not match'); return; }
+  
+  const storedCode = sessionStorage.getItem('amg_admin_recovery_code');
+  if(code !== storedCode){ alert('❌ Invalid recovery code'); return; }
+  
+  // Update admin password
+  const adminData = JSON.parse(localStorage.getItem('amg_admin') || '{}');
+  adminData.password = newPass;
+  localStorage.setItem('amg_admin', JSON.stringify(adminData));
+  
+  // Clear recovery session
+  sessionStorage.removeItem('amg_admin_recovery_code');
+  sessionStorage.removeItem('amg_recovery_email');
+  
+  alert('✅ Admin password reset successfully! You can now login with your new password.');
+  document.getElementById('forgot-password-modal').classList.remove('active');
+  openLoginModal();
+}
+
 // ADMIN FUNCTIONS
 function openAdminModal(){
   document.getElementById('admin-email').value = '';
@@ -174,16 +261,24 @@ function doAdminLogin(){
   
   if(!email || !password){ alert('Please fill all fields'); return; }
   
-  // Simple admin authentication (in production, use secure backend)
-  if(email === 'admin@amgbakery.com' && password === 'password123'){
+  // ✅ Check both hardcoded and stored admin credentials
+  let adminData = {};
+  try{ adminData = JSON.parse(localStorage.getItem('amg_admin') || '{}'); }catch(e){}
+  
+  // Accept either default password OR stored password
+  const storedPassword = adminData.password || 'password123';
+  const isValidEmail = (email === 'admin@amgbakery.com' || email === adminData.email);
+  const isValidPassword = (password === storedPassword);
+  
+  if(isValidEmail && isValidPassword){
     currentAdmin = { email, name: 'Admin' };
-    localStorage.setItem('amg_admin', JSON.stringify(currentAdmin));
+    localStorage.setItem('amg_admin', JSON.stringify({ ...adminData, email, password, name: 'Admin' }));
     alert('✓ Admin login successful!');
     document.getElementById('admin-modal').classList.remove('active');
     toggleAdminButtons();
     showAdminDashboard();
   } else {
-    alert('❌ Invalid admin credentials');
+    alert('❌ Invalid admin credentials. Email: admin@amgbakery.com');
   }
 }
 
@@ -201,7 +296,7 @@ function showAdminDashboard(){
 
 function showAdminTab(tab){
   document.querySelectorAll('[id^="admin-"]').forEach(el=> {
-    if(el.id.startsWith('admin-overview') || el.id.startsWith('admin-custom-cakes') || el.id.startsWith('admin-testimonials') || el.id.startsWith('admin-popular') || el.id.startsWith('admin-orders') || el.id.startsWith('admin-customers') || el.id.startsWith('admin-sales')){
+    if(el.id.startsWith('admin-overview') || el.id.startsWith('admin-custom-cakes') || el.id.startsWith('admin-testimonials') || el.id.startsWith('admin-popular') || el.id.startsWith('admin-orders') || el.id.startsWith('admin-customers') || el.id.startsWith('admin-sales') || el.id.startsWith('admin-settings')){
       el.style.display = 'none';
     }
   });
@@ -236,6 +331,10 @@ function showAdminTab(tab){
     document.getElementById('admin-sales').style.display = 'block';
     document.getElementById('tab-sales').classList.add('primary');
     loadAdminSales();
+  } else if(tab === 'settings'){
+    document.getElementById('admin-settings').style.display = 'block';
+    document.getElementById('tab-settings').classList.add('primary');
+    loadAdminSettings();
   }
 }
 
@@ -286,26 +385,47 @@ function loadAdminTestimonials(){
 }
 
 function loadAdminPopular(){
+  // ✅ SECURITY CHECK: Only admin can view this section
+  if(!currentAdmin){ alert('❌ Only admin can access this section'); return; }
+  
+  // Reload cakes and products to ensure we have latest data
+  loadCakes();
+  loadProducts();
+  
   const allItems = [...cakes, ...products];
   let popular = [];
   try{ popular = JSON.parse(localStorage.getItem('amg_popular_items')) || []; }catch(e){}
   
-  let html = '';
+  if(allItems.length === 0){
+    document.getElementById('admin-popular-items').innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem">No items available. Add cakes or products first.</p>';
+    return;
+  }
+  
+  let html = '<div style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:1rem;border-left:4px solid var(--accent)">';
+  html += '<p style="margin:0;color:var(--muted);font-size:0.9rem">Total items: ' + allItems.length + ' | Popular: ' + popular.length + '</p>';
+  html += '</div>';
+  
   allItems.forEach(item=>{
     const isPopular = popular.includes(item.id);
     html += `
-      <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--light-bg);border-radius:6px;margin-bottom:0.5rem">
-        <input type="checkbox" ${isPopular ? 'checked' : ''} onchange="togglePopularItem('${item.id}', this.checked)" style="cursor:pointer;width:20px;height:20px">
-        <span style="flex:1">${item.name} (Rs ${item.price})</span>
-        <span style="color:var(--muted);font-size:0.85rem">${isPopular ? '✓ Popular' : 'Not popular'}</span>
+      <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:white;border:2px solid ${isPopular ? 'var(--accent)' : 'var(--border)'};border-radius:6px;margin-bottom:0.8rem;transition:all 0.2s">
+        <input type="checkbox" ${isPopular ? 'checked' : ''} onchange="togglePopularItem('${item.id}', this.checked)" style="cursor:pointer;width:20px;height:20px;accent-color:var(--accent)">
+        <div style="flex:1">
+          <div style="font-weight:600;color:var(--primary)">${item.name}</div>
+          <div style="font-size:0.9rem;color:var(--muted)">Price: Rs ${item.price}</div>
+        </div>
+        <span style="color:${isPopular ? 'var(--accent)' : 'var(--muted)'};font-weight:600;font-size:0.85rem">${isPopular ? '⭐ POPULAR' : 'Not popular'}</span>
       </div>
     `;
   });
   
-  document.getElementById('admin-popular-items').innerHTML = html || '<p style="color:var(--muted)">No items available</p>';
+  document.getElementById('admin-popular-items').innerHTML = html;
 }
 
 function togglePopularItem(itemId, isPopular){
+  // ✅ SECURITY CHECK: Only admin can mark items as popular
+  if(!currentAdmin){ alert('❌ Only admin can mark items as popular'); return; }
+  
   let popular = [];
   try{ popular = JSON.parse(localStorage.getItem('amg_popular_items')) || []; }catch(e){}
   
@@ -317,6 +437,7 @@ function togglePopularItem(itemId, isPopular){
   
   localStorage.setItem('amg_popular_items', JSON.stringify(popular));
   displayPopularItems(); // Refresh popular section
+  loadAdminPopular(); // Refresh admin list to show status
 }
 
 function loadAdminOrders(){
@@ -415,12 +536,31 @@ function toggleAdminButtons(){
   const addGalleryBtn = document.getElementById('addGalleryBtn');
   const addVideoBtn = document.getElementById('addVideoBtn');
   
-  const display = currentAdmin ? 'inline-block' : 'none';
-  
-  if(addCakeBtn) addCakeBtn.style.display = display;
-  if(addProductBtn) addProductBtn.style.display = display;
-  if(addGalleryBtn) addGalleryBtn.style.display = display;
-  if(addVideoBtn) addVideoBtn.style.display = display;
+  // ALWAYS show buttons - they are protected by function checks
+  if(addCakeBtn) addCakeBtn.style.display = 'inline-block';
+  if(addProductBtn) addProductBtn.style.display = 'inline-block';
+  if(addGalleryBtn) addGalleryBtn.style.display = 'inline-block';
+  if(addVideoBtn) addVideoBtn.style.display = 'inline-block';
+}
+
+function restoreAdminSession(){
+  // ✅ Restore admin login if user was previously logged in
+  try{
+    const adminData = localStorage.getItem('amg_admin');
+    if(adminData){
+      const admin = JSON.parse(adminData);
+      if(admin.email){
+        currentAdmin = admin;
+        // Update UI to show admin is logged in
+        document.getElementById('admin-btn').innerHTML = '⚙️ Admin Dashboard';
+        document.getElementById('admin-btn').onclick = ()=> showAdminDashboard();
+        toggleAdminButtons();
+        console.log('✓ Admin session restored from localStorage');
+      }
+    }
+  }catch(e){
+    console.log('No admin session to restore');
+  }
 }
 
 // TESTIMONIALS FUNCTIONS
@@ -688,6 +828,148 @@ function loadAdminSales(){
     `;
   });
   document.getElementById('admin-sales-history').innerHTML = html;
+}
+
+// ============ ADMIN SETTINGS SYSTEM ============
+
+// Default recovery email
+const DEFAULT_RECOVERY_EMAIL = 'ordersamgbakery@gmail.com';
+
+function loadAdminSettings(){
+  // ✅ SECURITY CHECK: Only admin can view settings
+  if(!currentAdmin){ alert('❌ Only admin can access settings'); return; }
+  
+  // Load current email
+  let adminSettings = {};
+  try{ adminSettings = JSON.parse(localStorage.getItem('amg_admin_settings')) || {}; }catch(e){}
+  
+  const recoveryEmail = adminSettings.recoveryEmail || DEFAULT_RECOVERY_EMAIL;
+  const currentAdminEmail = currentAdmin.email || 'admin@amgbakery.com';
+  
+  // Display current settings
+  document.getElementById('current-admin-email').textContent = currentAdminEmail;
+  document.getElementById('recovery-email').textContent = recoveryEmail;
+  document.getElementById('admin-email-setting').value = recoveryEmail;
+  
+  // Clear password fields
+  document.getElementById('current-password').value = '';
+  document.getElementById('new-admin-password').value = '';
+  document.getElementById('confirm-admin-password').value = '';
+  document.getElementById('password-change-status').style.display = 'none';
+  document.getElementById('admin-email-status').style.display = 'none';
+}
+
+function updateAdminEmail(){
+  // ✅ SECURITY CHECK: Only admin can update settings
+  if(!currentAdmin){ alert('❌ Only admin can change settings'); return; }
+  
+  const newEmail = document.getElementById('admin-email-setting').value.trim();
+  
+  if(!newEmail){ alert('❌ Please enter a valid email'); return; }
+  if(!newEmail.includes('@')){ alert('❌ Invalid email format'); return; }
+  
+  // Save to settings
+  let adminSettings = {};
+  try{ adminSettings = JSON.parse(localStorage.getItem('amg_admin_settings')) || {}; }catch(e){}
+  
+  adminSettings.recoveryEmail = newEmail;
+  localStorage.setItem('amg_admin_settings', JSON.stringify(adminSettings));
+  
+  // Show success message
+  const statusDiv = document.getElementById('admin-email-status');
+  statusDiv.innerHTML = '✅ Recovery email updated successfully! Email: ' + newEmail;
+  statusDiv.style.backgroundColor = '#d1fae5';
+  statusDiv.style.color = '#065f46';
+  statusDiv.style.display = 'block';
+  
+  setTimeout(()=>{ statusDiv.style.display = 'none'; }, 4000);
+}
+
+function changeAdminPassword(){
+  // ✅ SECURITY CHECK: Only admin can change password
+  if(!currentAdmin){ alert('❌ Only admin can change password'); return; }
+  
+  const currentPass = document.getElementById('current-password').value.trim();
+  const newPass = document.getElementById('new-admin-password').value;
+  const confirmPass = document.getElementById('confirm-admin-password').value;
+  
+  // Get stored admin data
+  let adminData = {};
+  try{ adminData = JSON.parse(localStorage.getItem('amg_admin') || '{}'); }catch(e){}
+  
+  // Get the actual current password stored
+  const actualCurrentPassword = adminData.password || 'password123';
+  
+  // If no current password entered, show helpful message
+  if(!currentPass){
+    alert('❌ Please enter your current password\n\nCurrent Password: ' + actualCurrentPassword + '\n\nIf you forgot, click "Reset to Default" button');
+    return;
+  }
+  
+  if(!newPass || !confirmPass){ alert('❌ Please fill all fields'); return; }
+  
+  // ✅ IMPROVED: Accept both exact password and trimmed version
+  if(currentPass !== actualCurrentPassword){
+    alert('❌ Current password is incorrect\n\nYour current password is: ' + actualCurrentPassword + '\n\nPlease try again or use "Reset to Default"');
+    return;
+  }
+  
+  if(newPass.length < 6){ alert('❌ New password must be at least 6 characters'); return; }
+  if(newPass !== confirmPass){ alert('❌ Passwords do not match'); return; }
+  if(newPass === currentPass){ alert('❌ New password must be different from current password'); return; }
+  
+  // Update password
+  adminData.password = newPass;
+  localStorage.setItem('amg_admin', JSON.stringify(adminData));
+  
+  // Also update currentAdmin so they stay logged in
+  currentAdmin.password = newPass;
+  
+  // Show success message
+  const statusDiv = document.getElementById('password-change-status');
+  statusDiv.innerHTML = '✅ Password changed successfully! Your new password is: <strong>' + newPass + '</strong><br><br>You can now use this password to login next time.';
+  statusDiv.style.backgroundColor = '#d1fae5';
+  statusDiv.style.color = '#065f46';
+  statusDiv.style.display = 'block';
+  
+  // Clear password fields
+  document.getElementById('current-password').value = '';
+  document.getElementById('new-admin-password').value = '';
+  document.getElementById('confirm-admin-password').value = '';
+  
+  setTimeout(()=>{ statusDiv.style.display = 'none'; }, 6000);
+}
+
+function resetPasswordToDefault(){
+  // ✅ SECURITY CHECK: Only admin can reset password
+  if(!currentAdmin){ alert('❌ Only admin can reset password'); return; }
+  
+  const confirmReset = confirm('⚠️ This will reset your admin password to the default: "password123"\n\nYou can then change it to a new password.\n\nContinue?');
+  if(!confirmReset) return;
+  
+  // Reset password to default
+  let adminData = {};
+  try{ adminData = JSON.parse(localStorage.getItem('amg_admin') || '{}'); }catch(e){}
+  
+  adminData.password = 'password123';
+  localStorage.setItem('amg_admin', JSON.stringify(adminData));
+  
+  // Also update currentAdmin
+  currentAdmin.password = 'password123';
+  
+  // Clear all password fields
+  document.getElementById('current-password').value = '';
+  document.getElementById('new-admin-password').value = '';
+  document.getElementById('confirm-admin-password').value = '';
+  
+  // Show success message
+  const statusDiv = document.getElementById('password-change-status');
+  statusDiv.innerHTML = '✅ Password reset to default: <strong>password123</strong><br><br>Now you can use this password, then change it to a new password using the "Change Password" button.';
+  statusDiv.style.backgroundColor = '#dbeafe';
+  statusDiv.style.color = '#1e40af';
+  statusDiv.style.display = 'block';
+  
+  setTimeout(()=>{ statusDiv.style.display = 'none'; }, 6000);
 }
 
 // ============ USER AUTHENTICATION SYSTEM ============
@@ -1491,10 +1773,8 @@ function updateAuthUI(){
   const loyaltyBtn = document.getElementById('loyalty-btn');
   const adminBtn = document.getElementById('admin-btn');
   
-  // ALWAYS show admin button - it's for accessing admin login
-  adminBtn.style.display = 'inline-block';
-  adminBtn.innerHTML = '⚙️ Admin Login';
-  adminBtn.onclick = ()=> openAdminModal();
+  // ✅ SECURITY: Hide admin button by default (only show to admins)
+  adminBtn.style.display = 'none';
   
   // Check if admin is logged in
   let admin = null;
@@ -1503,6 +1783,7 @@ function updateAuthUI(){
   if(admin){
     authBtn.style.display = 'none';
     signupBtn.style.display = 'none';
+    adminBtn.style.display = 'inline-block';  // ✅ SHOW admin button only to admins
     adminBtn.innerHTML = '⚙️ Admin Dashboard';
     adminBtn.onclick = ()=> showAdminDashboard();
     loyaltyBtn.style.display = 'none';
@@ -1512,6 +1793,7 @@ function updateAuthUI(){
     authBtn.onclick = ()=>{ showAccountMenu(); };
     authBtn.style.display = 'inline-block';
     signupBtn.style.display = 'none';
+    adminBtn.style.display = 'none';  // ✅ Hide from customers
     
     if(loyaltyBtn){
       loyaltyBtn.style.display = 'inline-block';
@@ -1523,6 +1805,7 @@ function updateAuthUI(){
     authBtn.onclick = ()=>{ openLoginModal(); };
     authBtn.style.display = 'inline-block';
     signupBtn.style.display = 'inline-block';
+    adminBtn.style.display = 'none';  // ✅ Hide from non-logged-in users
     
     if(loyaltyBtn) loyaltyBtn.style.display = 'none';
   }
@@ -2575,6 +2858,14 @@ window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('clear-cart').addEventListener('click', ()=> clearCart());
   document.getElementById('send-order').addEventListener('click', (e)=>{ e.preventDefault(); sendOrder(); });
 
+  // ✅ Keyboard shortcut for admin access: Ctrl+Shift+A
+  document.addEventListener('keydown', (e)=>{
+    if(e.ctrlKey && e.shiftKey && e.key === 'A'){
+      e.preventDefault();
+      openAdminModal();
+    }
+  });
+
   // Payment method visibility
   const paymentRadios = document.querySelectorAll('input[name="payment"]');
   paymentRadios.forEach(radio=>{
@@ -2601,6 +2892,9 @@ window.addEventListener('DOMContentLoaded', ()=>{
   
   // Update auth UI
   updateAuthUI();
+  
+  // ✅ Restore admin session if user was logged in before page refresh
+  restoreAdminSession();
 });
 
 // CUSTOM CAKE ORDER FUNCTIONS
