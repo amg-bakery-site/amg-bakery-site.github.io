@@ -2,6 +2,67 @@
 
 let currentAdmin = null;
 let currentTestimonialRating = 0;
+let searchQuery = ''; // Initialize search query variable
+
+// STORAGE MANAGEMENT
+function getStorageUsage(){
+  let total = 0;
+  for(let key in localStorage){
+    if(localStorage.hasOwnProperty(key)){
+      total += localStorage[key].length + key.length;
+    }
+  }
+  return (total / 1024).toFixed(2); // KB
+}
+
+function showStorageStatus(){
+  const used = getStorageUsage();
+  console.log(`📊 Storage used: ${used} KB / 5000 KB (${(used/5000*100).toFixed(1)}%)`);
+  if(used > 4500){
+    console.warn('⚠️ WARNING: Storage nearly full! Consider clearing old data.');
+  }
+}
+
+// CLEAR OLD DATA TO FREE STORAGE
+function clearOldData(){
+  if(!confirm('This will remove old cakes, products, and photos to free up storage.\n\nKeep only the 3 most recent of each. Continue?')) return;
+  
+  try {
+    // Clear old cakes
+    let cakes = JSON.parse(localStorage.getItem('amg_cakes')) || [];
+    if(cakes.length > 3) {
+      cakes = cakes.slice(-3);
+      localStorage.setItem('amg_cakes', JSON.stringify(cakes));
+      console.log('✓ Kept only 3 newest cakes');
+    }
+    
+    // Clear old products
+    let products = JSON.parse(localStorage.getItem('amg_products')) || [];
+    if(products.length > 3) {
+      products = products.slice(-3);
+      localStorage.setItem('amg_products', JSON.stringify(products));
+      console.log('✓ Kept only 3 newest products');
+    }
+    
+    // Clear old gallery photos
+    let gallery = JSON.parse(localStorage.getItem('amg_gallery_photos')) || [];
+    if(gallery.length > 5) {
+      gallery = gallery.slice(-5);
+      localStorage.setItem('amg_gallery_photos', JSON.stringify(gallery));
+      console.log('✓ Kept only 5 newest gallery photos');
+    }
+    
+    showStorageStatus();
+    alert('✓ Storage cleaned! Old items removed.');
+    location.reload();
+  } catch(e) {
+    console.error('Error clearing data:', e);
+    alert('Error clearing storage');
+  }
+}
+
+// Run storage check on load
+window.addEventListener('load', showStorageStatus);
 
 // FLOATING SOCIAL MEDIA WIDGET
 function toggleFloatingSocial(){
@@ -342,7 +403,11 @@ function doAdminLogout(){
 
 // TESTIMONIALS FUNCTIONS
 function openTestimonialModal(){
-  document.getElementById('testimonial-name').value = '';
+  if(!currentUser){ alert('❌ Please login to add a review'); return; }
+  
+  // Pre-fill with logged-in user's name
+  document.getElementById('testimonial-name').value = currentUser.name;
+  document.getElementById('testimonial-name').readOnly = true; // Make name read-only
   document.getElementById('testimonial-text').value = '';
   currentTestimonialRating = 0;
   document.getElementById('rating-display').textContent = 'Select rating';
@@ -355,39 +420,86 @@ function setRating(rating){
 }
 
 function submitTestimonial(){
-  const name = document.getElementById('testimonial-name').value.trim();
+  if(!currentUser){ alert('❌ Please login to submit a review'); return; }
+  
   const text = document.getElementById('testimonial-text').value.trim();
   const rating = currentTestimonialRating;
   
-  if(!name || !text || !rating){ alert('Please fill all fields'); return; }
+  if(!text || !rating){ alert('Please fill all fields'); return; }
   
   let testimonials = [];
   try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
   
-  testimonials.push({ name, text, rating, date: new Date().toISOString() });
-  localStorage.setItem('amg_testimonials', JSON.stringify(testimonials));
+  // Always use the logged-in user's name to ensure matching works
+  testimonials.push({ 
+    name: currentUser.name, 
+    text, 
+    rating, 
+    date: new Date().toISOString(),
+    userId: currentUser.email // Add userId for extra security
+  });
   
-  alert('✓ Thank you for your review!');
-  document.getElementById('testimonial-modal').classList.remove('active');
+  try {
+    localStorage.setItem('amg_testimonials', JSON.stringify(testimonials));
+    alert('✓ Thank you for your review! You can edit or delete it anytime.');
+    document.getElementById('testimonial-modal').classList.remove('active');
+    displayTestimonials();
+  } catch(error) {
+    if(error.name === 'QuotaExceededError' || error.code === 22) {
+      alert('❌ Storage full! Please clear old reviews or try again later.');
+    } else {
+      console.error('Error saving review:', error);
+      alert('Error saving review: ' + error.message);
+    }
+  }
+}
+
+
+function editTestimonial(idx){
+  if(!currentUser){ alert('❌ Please login to edit your review'); return; }
+  
+  let testimonials = [];
+  try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
+  
+  const review = testimonials[idx];
+  if(review.name !== currentUser.name){ alert('❌ You can only edit your own review'); return; }
+  
+  const newText = prompt('Edit your review:', review.text);
+  if(newText === null) return;
+  
+  if(!newText.trim()){ alert('❌ Review cannot be empty'); return; }
+  
+  review.text = newText.trim();
+  review.rating = prompt('Edit rating (1-5):', review.rating) || review.rating;
+  review.rating = Math.min(5, Math.max(1, parseInt(review.rating)));
+  
+  localStorage.setItem('amg_testimonials', JSON.stringify(testimonials));
+  alert('✓ Review updated successfully!');
   displayTestimonials();
 }
 
 function deleteTestimonial(idx){
-  if(!currentAdmin){ alert('❌ Only admin can delete testimonials'); return; }
-  if(!confirm('Delete this testimonial?')) return;
-  
   let testimonials = [];
   try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
+  
+  const review = testimonials[idx];
+  
+  // Check if user can delete (owner or admin)
+  const isOwner = currentUser && currentUser.name === review.name;
+  const isAdmin = currentAdmin;
+  
+  if(!isAdmin && !isOwner){ 
+    alert('❌ You can only delete your own review'); 
+    return; 
+  }
+  
+  if(!confirm('Delete this testimonial?')) return;
   
   testimonials.splice(idx, 1);
   localStorage.setItem('amg_testimonials', JSON.stringify(testimonials));
   
   alert('✓ Testimonial deleted');
-  if(currentAdmin){
-    loadAdminTestimonials();
-  } else {
-    displayTestimonials();
-  }
+  displayTestimonials();
 }
 
 // ABOUT SECTION FUNCTIONS
@@ -662,10 +774,68 @@ function getOrderHistory(){
 // UTILITY FUNCTIONS
 function formatPrice(n){ return `Rs ${n}` }
 
+// IMAGE COMPRESSION FOR STORAGE OPTIMIZATION - AGGRESSIVE
+function compressImage(dataUri) {
+  return new Promise((resolve, reject)=>{
+    try {
+      const img = new Image();
+      img.onload = ()=> {
+        const canvas = document.createElement('canvas');
+        // Reduce size significantly
+        let width = img.width;
+        let height = img.height;
+        
+        // Scale down to max 400x400
+        const maxDim = 400;
+        if(width > maxDim || height > maxDim){
+          const ratio = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Very aggressive compression: 0.5 quality (50%)
+        const compressed = canvas.toDataURL('image/jpeg', 0.5);
+        console.log('✓ Compression complete. Original: ' + dataUri.length + ' chars → Compressed: ' + compressed.length + ' chars (' + ((1 - compressed.length/dataUri.length)*100).toFixed(0) + '% reduction)');
+        resolve(compressed);
+      };
+      img.onerror = ()=> reject(new Error('Failed to load image for compression'));
+      img.src = dataUri;
+    } catch(e) {
+      console.error('✗ Compression error:', e);
+      reject(e);
+    }
+  });
+}
+
 function fileToDataUri(file){
-  return new Promise((resolve)=>{
+  return new Promise((resolve, reject)=>{
     const reader = new FileReader();
-    reader.onload = (e)=> resolve(e.target.result);
+    reader.onload = async (e)=> {
+      try {
+        console.log('✓ File read. Original size: ' + (file.size / 1024).toFixed(2) + ' KB');
+        const dataUri = e.target.result;
+        
+        // Compress the image
+        const compressed = await compressImage(dataUri);
+        resolve(compressed);
+      } catch(error) {
+        console.error('✗ Compression failed:', error);
+        reject(error);
+      }
+    };
+    reader.onerror = (e)=> {
+      console.error('✗ File read error:', e);
+      reject(new Error('Failed to read file'));
+    };
+    reader.onabort = ()=> {
+      console.error('✗ File read aborted');
+      reject(new Error('File read was aborted'));
+    };
     reader.readAsDataURL(file);
   });
 }
@@ -692,7 +862,43 @@ function loadCakes(){
 }
 
 function saveCakes(){
-  localStorage.setItem('amg_cakes', JSON.stringify(cakes));
+  try {
+    localStorage.setItem('amg_cakes', JSON.stringify(cakes));
+    console.log('✓ Cakes saved to storage');
+  } catch(error) {
+    if(error.name === 'QuotaExceededError' || error.code === 22) {
+      console.error('✗ Storage quota exceeded!');
+      console.log('🗑️ Attempting to free space...');
+      
+      // Remove oldest cakes (keep only 5 most recent)
+      if(cakes.length > 5) {
+        cakes = cakes.slice(-5);
+        console.log('✓ Kept only 5 most recent cakes');
+      }
+      
+      // Remove images from old cakes
+      cakes.forEach(cake => {
+        if(cake.image && cake.image.length > 50000) {
+          console.log('🗑️ Removing large image from:', cake.name);
+          cake.image = null;
+        }
+      });
+      
+      // Try saving again
+      try {
+        localStorage.setItem('amg_cakes', JSON.stringify(cakes));
+        console.log('✓ Cakes saved after cleanup');
+        alert('⚠️ Storage optimized! Kept 5 newest cakes. Some images removed.');
+      } catch(err2) {
+        console.error('✗ Still quota exceeded after cleanup');
+        alert('❌ Storage full! Please clear browser data or delete old cakes.');
+        throw err2;
+      }
+    } else {
+      console.error('✗ Storage error:', error);
+      throw error;
+    }
+  }
 }
 
 function addCake(name, price, desc, imageDataUri){
@@ -743,7 +949,28 @@ function loadProducts(){
 }
 
 function saveProducts(){
-  localStorage.setItem('amg_products', JSON.stringify(products));
+  try {
+    localStorage.setItem('amg_products', JSON.stringify(products));
+    console.log('✓ Products saved to storage');
+  } catch(error) {
+    if(error.name === 'QuotaExceededError' || error.code === 22) {
+      console.error('✗ Storage quota exceeded!');
+      if(products.length > 5) {
+        products = products.slice(-5);
+        console.log('✓ Kept only 5 most recent products');
+      }
+      products.forEach(p => {
+        if(p.image && p.image.length > 50000) p.image = null;
+      });
+      try {
+        localStorage.setItem('amg_products', JSON.stringify(products));
+        alert('⚠️ Storage optimized! Kept 5 newest products.');
+      } catch(err2) {
+        alert('❌ Storage full! Clear browser data.');
+        throw err2;
+      }
+    } else throw error;
+  }
 }
 
 function addProduct(name, price, desc, imageDataUri){
@@ -802,7 +1029,12 @@ function renderCakeGallery(){
     const img = document.createElement('img');
     img.className = 'product-img';
     img.alt = cake.name;
-    img.src = cake.image || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect fill="%23f0f0f0" width="100%25" height="100%25"/><text x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="%23999">No image</text></svg>';
+    // Check if image is a valid dataURI
+    if(cake.image && cake.image.startsWith('data:image')){
+      img.src = cake.image;
+    } else {
+      img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect fill="%23e5e7eb" width="100%25" height="100%25"/><text x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="%23999">🎂 ' + cake.name + '</text></svg>';
+    }
     card.appendChild(img);
 
     // NAME
@@ -899,7 +1131,12 @@ function renderProductGallery(){
     const img = document.createElement('img');
     img.className = 'product-img';
     img.alt = prod.name;
-    img.src = prod.image || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect fill="%23f0f0f0" width="100%25" height="100%25"/><text x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="%23999">No image</text></svg>';
+    // Check if image is a valid dataURI
+    if(prod.image && prod.image.startsWith('data:image')){
+      img.src = prod.image;
+    } else {
+      img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect fill="%23e5e7eb" width="100%25" height="100%25"/><text x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="%23999">📦 ' + prod.name + '</text></svg>';
+    }
     card.appendChild(img);
 
     // NAME
@@ -1213,8 +1450,8 @@ function updateAuthUI(){
     loyaltyBtn.style.display = 'none';
     currentAdmin = admin;
   } else if(currentUser){
-    authBtn.innerHTML = `👤 ${currentUser.name.split(' ')[0]} | Account`;
-    authBtn.onclick = ()=>{ goToProfile(); };
+    authBtn.innerHTML = `👤 ${currentUser.name.split(' ')[0]} | Account ▼`;
+    authBtn.onclick = ()=>{ showAccountMenu(); };
     authBtn.style.display = 'inline-block';
     signupBtn.style.display = 'none';
     adminBtn.style.display = 'none';
@@ -1232,6 +1469,21 @@ function updateAuthUI(){
     adminBtn.style.display = 'none';
     
     if(loyaltyBtn) loyaltyBtn.style.display = 'none';
+  }
+}
+
+// ACCOUNT MENU DROPDOWN
+function showAccountMenu(){
+  const choice = confirm(`👤 ${currentUser.name}\n\n📧 ${currentUser.email}\n⭐ ${currentUser.loyaltyPoints} Points\n\nClick OK to go to Profile\nClick Cancel to Logout`);
+  
+  if(choice === true){
+    // Go to profile
+    goToProfile();
+  } else if(choice === false){
+    // User clicked Cancel - offer logout
+    if(confirm('Logout now?')){
+      doLogoutAndReload();
+    }
   }
 }
 
@@ -1371,6 +1623,14 @@ function doLogoutAndReload(){
   }
 }
 
+function goToHome(){
+  // Show all sections except profile/order-history
+  document.querySelectorAll('section').forEach(s=> s.style.display = 'block');
+  document.getElementById('profile-page').style.display = 'none';
+  document.getElementById('order-history-page').style.display = 'none';
+  document.querySelector('section').scrollIntoView({behavior:'smooth'});
+}
+
 function goToOrders(){
   // Hide profile/order-history, show order section
   document.querySelectorAll('section').forEach(s=> s.style.display = 'block');
@@ -1434,13 +1694,27 @@ function displayTestimonials(){
   let html = '';
   testimonials.forEach((review, idx)=>{
     const stars = '⭐'.repeat(Math.round(review.rating)) + (review.rating % 1 ? '✨' : '');
+    const isOwner = currentUser && currentUser.name.trim().toLowerCase() === review.name.trim().toLowerCase();
+    const isAdmin = currentAdmin;
+    
+    // Debug log
+    if(currentUser) {
+      console.log(`Review ${idx}: "${review.name}" vs Current: "${currentUser.name}" → isOwner: ${isOwner}`);
+    }
+    
     html += `
-      <div style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);position:relative">
-        <div style="margin-bottom:0.5rem">${stars}</div>
+      <div style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);position:relative;border-left:4px solid ${isOwner ? '#fbbf24' : '#e5e7eb'}">
+        <div style="margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:start">
+          <span>${stars}</span>
+          ${isOwner ? `<span style="background:#fbbf24;color:#000;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:bold">YOUR REVIEW</span>` : ''}
+        </div>
         <p style="margin:0 0 1rem 0;font-style:italic;color:var(--text)">"${review.text}"</p>
-        <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
           <p style="margin:0;font-weight:600;color:var(--primary)">— ${review.name}</p>
-          ${currentAdmin ? `<button onclick="deleteTestimonial(${idx})" style="background:#ef4444;color:white;border:none;padding:0.3rem 0.6rem;border-radius:4px;cursor:pointer;font-size:0.8rem">Delete</button>` : ''}
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+            ${isOwner ? `<button onclick="editTestimonial(${idx})" style="background:#3b82f6;color:white;border:none;padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;font-size:0.85rem;font-weight:600">✏️ Edit</button>` : ''}
+            ${(isAdmin || isOwner) ? `<button onclick="deleteTestimonial(${idx})" style="background:#ef4444;color:white;border:none;padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;font-size:0.85rem;font-weight:600">🗑️ Delete</button>` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -1495,24 +1769,50 @@ async function saveCake(){
   const desc = document.getElementById('cake-desc').value.trim();
   const photoInput = document.getElementById('cake-photo');
 
-  if(!name || !price){ alert('Name and price are required'); return }
+  if(!name || !price){ alert('Name and price are required'); return; }
 
   let imageUri = null;
-  if(photoInput.files.length > 0){
-    imageUri = await fileToDataUri(photoInput.files[0]);
-  }
-
-  const editId = document.getElementById('add-cake-modal').dataset.editId;
-  if(editId){
-    // Update existing cake
-    updateCake(editId, name, price, desc, imageUri);
+  if(photoInput.files && photoInput.files.length > 0){
+    try {
+      console.log('🔄 Converting cake image...');
+      imageUri = await fileToDataUri(photoInput.files[0]);
+      console.log('✓ Cake image converted successfully, URI length:', imageUri.length);
+    } catch(error) {
+      console.error('✗ Error converting image:', error);
+      alert('Error uploading image: ' + error.message);
+      return;
+    }
   } else {
-    // Add new cake
-    addCake(name, price, desc, imageUri);
+    console.log('ℹ️ No image selected for cake');
   }
 
-  renderCakeGallery();
-  document.getElementById('add-cake-modal').classList.remove('active');
+  try {
+    const editId = document.getElementById('add-cake-modal').dataset.editId;
+    if(editId){
+      console.log('🔄 Updating cake:', editId);
+      updateCake(editId, name, price, desc, imageUri);
+    } else {
+      console.log('🔄 Adding new cake...');
+      addCake(name, price, desc, imageUri);
+    }
+    
+    console.log('✓ Cake saved. Total cakes:', cakes.length);
+    renderCakeGallery();
+    
+    // Reset form
+    document.getElementById('cake-name').value = '';
+    document.getElementById('cake-price').value = '';
+    document.getElementById('cake-desc').value = '';
+    document.getElementById('cake-photo').value = '';
+    
+    // Close modal
+    document.getElementById('add-cake-modal').classList.remove('active');
+    
+    alert('✓ Cake added successfully!');
+  } catch(error) {
+    console.error('✗ Error saving cake:', error);
+    alert('Error saving cake: ' + error.message);
+  }
 }
 
 // PRODUCT MODAL FUNCTIONS
@@ -1542,24 +1842,50 @@ async function saveProduct(){
   const desc = document.getElementById('product-desc').value.trim();
   const photoInput = document.getElementById('product-photo');
 
-  if(!name || !price){ alert('Name and price are required'); return }
+  if(!name || !price){ alert('Name and price are required'); return; }
 
   let imageUri = null;
-  if(photoInput.files.length > 0){
-    imageUri = await fileToDataUri(photoInput.files[0]);
-  }
-
-  const editId = document.getElementById('add-product-modal').dataset.editId;
-  if(editId){
-    // Update existing product
-    updateProduct(editId, name, price, desc, imageUri);
+  if(photoInput.files && photoInput.files.length > 0){
+    try {
+      console.log('🔄 Converting product image...');
+      imageUri = await fileToDataUri(photoInput.files[0]);
+      console.log('✓ Product image converted successfully, URI length:', imageUri.length);
+    } catch(error) {
+      console.error('✗ Error converting image:', error);
+      alert('Error uploading image: ' + error.message);
+      return;
+    }
   } else {
-    // Add new product
-    addProduct(name, price, desc, imageUri);
+    console.log('ℹ️ No image selected for product');
   }
 
-  renderProductGallery();
-  document.getElementById('add-product-modal').classList.remove('active');
+  try {
+    const editId = document.getElementById('add-product-modal').dataset.editId;
+    if(editId){
+      console.log('🔄 Updating product:', editId);
+      updateProduct(editId, name, price, desc, imageUri);
+    } else {
+      console.log('🔄 Adding new product...');
+      addProduct(name, price, desc, imageUri);
+    }
+
+    console.log('✓ Product saved. Total products:', products.length);
+    renderProductGallery();
+    
+    // Reset form
+    document.getElementById('product-name').value = '';
+    document.getElementById('product-price').value = '';
+    document.getElementById('product-desc').value = '';
+    document.getElementById('product-photo').value = '';
+    
+    // Close modal
+    document.getElementById('add-product-modal').classList.remove('active');
+    
+    alert('✓ Product added successfully!');
+  } catch(error) {
+    console.error('✗ Error saving product:', error);
+    alert('Error saving product: ' + error.message);
+  }
 }
 
 // GALLERY MODAL FUNCTIONS
@@ -1586,24 +1912,52 @@ async function saveGalleryPhoto(){
   const desc = document.getElementById('gallery-desc').value.trim();
   const photoInput = document.getElementById('gallery-photo');
 
-  if(!title){ alert('Title is required'); return }
+  if(!title){ alert('Title is required'); return; }
 
   let imageUri = null;
-  if(photoInput.files.length > 0){
-    imageUri = await fileToDataUri(photoInput.files[0]);
-  }
-
-  const editId = document.getElementById('add-gallery-modal').dataset.editId;
-  if(editId){
-    // Update existing photo
-    updateGalleryPhoto(editId, title, desc, imageUri);
+  if(photoInput.files && photoInput.files.length > 0){
+    try {
+      console.log('🔄 Converting gallery image...');
+      imageUri = await fileToDataUri(photoInput.files[0]);
+      console.log('✓ Gallery image converted successfully. Size:', imageUri.length, 'bytes');
+    } catch(error){
+      console.error('✗ Error converting image:', error);
+      alert('Error uploading image: ' + error.message);
+      return;
+    }
   } else {
-    // Add new photo
-    addGalleryPhoto(title, desc, imageUri);
+    console.log('ℹ️ No image selected for gallery');
   }
 
-  renderGallery();
-  document.getElementById('add-gallery-modal').classList.remove('active');
+  try {
+    const editId = document.getElementById('add-gallery-modal').dataset.editId;
+    if(editId){
+      console.log('🔄 Updating gallery photo:', editId);
+      updateGalleryPhoto(editId, title, desc, imageUri);
+    } else {
+      console.log('🔄 Adding new gallery photo...');
+      addGalleryPhoto(title, desc, imageUri);
+    }
+
+    console.log('✓ Photo saved. Total gallery photos:', galleryPhotos.length);
+    
+    // Render immediately
+    renderGallery();
+    console.log('✓ Gallery rendered successfully');
+    
+    // Reset form
+    document.getElementById('gallery-title').value = '';
+    document.getElementById('gallery-desc').value = '';
+    document.getElementById('gallery-photo').value = '';
+    
+    // Close modal
+    document.getElementById('add-gallery-modal').classList.remove('active');
+    
+    alert('✓ Photo added successfully!');
+  } catch(error) {
+    console.error('✗ Error saving photo:', error);
+    alert('Error saving photo: ' + error.message);
+  }
 }
 
 // LOGO
@@ -1622,10 +1976,32 @@ function setLogo(dataUri){
   display.appendChild(img);
 }
 
-function saveLogo(){
+async function saveLogo(){
   const file = document.getElementById('logo-file').files[0];
-  if(!file){ alert('Please select a file'); return }
-  fileToDataUri(file).then(uri=>{ setLogo(uri); document.getElementById('logo-modal').classList.remove('active'); });
+  if(!file){ 
+    alert('Please select a file'); 
+    return;
+  }
+  
+  try {
+    console.log('🔄 Converting logo file to dataURI...');
+    const uri = await fileToDataUri(file);
+    console.log('✓ Logo converted successfully. Size:', uri.length, 'bytes');
+    
+    setLogo(uri);
+    console.log('✓ Logo set and saved to localStorage');
+    
+    // Reset form
+    document.getElementById('logo-file').value = '';
+    
+    // Close modal
+    document.getElementById('logo-modal').classList.remove('active');
+    
+    alert('✓ Logo updated successfully!');
+  } catch(error) {
+    console.error('✗ Error saving logo:', error);
+    alert('Error uploading logo: ' + error.message);
+  }
 }
 
 // PAYMENT FIELDS
@@ -1668,7 +2044,28 @@ function loadGalleryPhotos(){
 }
 
 function saveGalleryPhotos(){
-  localStorage.setItem('amg_gallery_photos', JSON.stringify(galleryPhotos));
+  try {
+    localStorage.setItem('amg_gallery_photos', JSON.stringify(galleryPhotos));
+    console.log('✓ Gallery photos saved to storage');
+  } catch(error) {
+    if(error.name === 'QuotaExceededError' || error.code === 22) {
+      console.error('✗ Storage quota exceeded!');
+      if(galleryPhotos.length > 10) {
+        galleryPhotos = galleryPhotos.slice(-10);
+        console.log('✓ Kept only 10 most recent gallery photos');
+      }
+      galleryPhotos.forEach(p => {
+        if(p.image && p.image.length > 50000) p.image = null;
+      });
+      try {
+        localStorage.setItem('amg_gallery_photos', JSON.stringify(galleryPhotos));
+        alert('⚠️ Storage optimized! Kept 10 newest photos.');
+      } catch(err2) {
+        alert('❌ Storage full! Clear browser data.');
+        throw err2;
+      }
+    } else throw error;
+  }
 }
 
 function addGalleryPhoto(title, description, imageDataUri){
@@ -1717,7 +2114,7 @@ function renderGallery(){
   gallery.innerHTML = '';
   
   if(galleryPhotos.length === 0){
-    gallery.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted)">No gallery photos yet. Click "+ Add Gallery Photo" to get started!</p>';
+    gallery.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted);padding:2rem">No gallery photos yet. Click "+ Add Gallery Photo" to get started!</p>';
     return;
   }
   
@@ -1728,14 +2125,22 @@ function renderGallery(){
     div.style.flexDirection = 'column';
     div.style.position = 'relative';
     
+    // IMAGE
     const img = document.createElement('img');
-    img.src = photo.image || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="250"><rect fill="%23f0f0f0" width="100%25" height="100%25"/><text x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="%23999">No image</text></svg>';
+    // Use the photo.image directly if it exists (should be dataURL)
+    if(photo.image && photo.image.startsWith('data:image')){
+      img.src = photo.image;
+    } else {
+      // Fallback placeholder
+      img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="250"><rect fill="%23e5e7eb" width="100%25" height="100%25"/><text x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle" font-size="16" fill="%23999">📷 ' + (photo.title || 'No image') + '</text></svg>';
+    }
     img.alt = photo.title;
     img.style.cursor = 'pointer';
     img.style.width = '100%';
     img.style.height = '200px';
     img.style.objectFit = 'cover';
     img.style.borderRadius = '10px';
+    img.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
     
     div.appendChild(img);
     
@@ -1745,6 +2150,7 @@ function renderGallery(){
     title.style.margin = '0.8rem 0 0.3rem 0';
     title.style.fontSize = '1rem';
     title.style.color = 'var(--primary)';
+    title.style.fontWeight = '700';
     div.appendChild(title);
     
     // DESCRIPTION
@@ -1756,6 +2162,7 @@ function renderGallery(){
       desc.style.fontSize = '0.9rem';
       desc.style.color = 'var(--muted)';
       desc.style.whiteSpace = 'pre-wrap';
+      desc.style.lineHeight = '1.4';
       div.appendChild(desc);
     }
     
@@ -1792,6 +2199,231 @@ function renderGallery(){
   });
 }
 
+// ============ VIDEO GALLERY ============
+let videos = [];
+
+function loadVideos(){
+  const stored = localStorage.getItem('amg_videos');
+  if(stored){
+    return JSON.parse(stored);
+  }
+  // Sample videos on first load
+  const sampleVideos = [
+    {
+      id: generateCakeId(),
+      title: "How We Make Our Chocolate Cake",
+      description: "Watch our chef prepare our famous chocolate cake from scratch!",
+      url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      category: "tutorial",
+      date: new Date().toISOString()
+    }
+  ];
+  localStorage.setItem('amg_videos', JSON.stringify(sampleVideos));
+  return sampleVideos;
+}
+
+function saveVideos(){
+  localStorage.setItem('amg_videos', JSON.stringify(videos));
+}
+
+function addVideo(title, description, url, category){
+  // Convert YouTube watch URL to embed URL if needed
+  let embedUrl = url;
+  if(url.includes('youtube.com/watch')){
+    const videoId = url.split('v=')[1]?.split('&')[0];
+    embedUrl = `https://www.youtube.com/embed/${videoId}`;
+  } else if(url.includes('youtu.be/')){
+    const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    embedUrl = `https://www.youtube.com/embed/${videoId}`;
+  }
+  
+  const video = {
+    id: generateCakeId(),
+    title: title,
+    description: description,
+    url: embedUrl,
+    category: category,
+    date: new Date().toISOString()
+  };
+  videos.push(video);
+  saveVideos();
+  return video;
+}
+
+function deleteVideo(id){
+  videos = videos.filter(v => v.id !== id);
+  saveVideos();
+}
+
+function updateVideo(id, title, description, url, category){
+  const video = videos.find(v => v.id === id);
+  if(video){
+    let embedUrl = url;
+    if(url.includes('youtube.com/watch')){
+      const videoId = url.split('v=')[1]?.split('&')[0];
+      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if(url.includes('youtu.be/')){
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    video.title = title;
+    video.description = description;
+    video.url = embedUrl;
+    video.category = category;
+    saveVideos();
+  }
+}
+
+function openAddVideoModal(){
+  document.getElementById('add-video-modal').dataset.editId = '';
+  document.getElementById('add-video-modal').querySelector('h3').textContent = 'Add Video';
+  document.getElementById('video-title').value = '';
+  document.getElementById('video-desc').value = '';
+  document.getElementById('video-url').value = '';
+  document.getElementById('video-category').value = 'tutorial';
+  document.getElementById('add-video-modal').classList.add('active');
+}
+
+function openEditVideoModal(video){
+  document.getElementById('add-video-modal').dataset.editId = video.id;
+  document.getElementById('add-video-modal').querySelector('h3').textContent = 'Edit Video';
+  document.getElementById('video-title').value = video.title;
+  document.getElementById('video-desc').value = video.description;
+  document.getElementById('video-url').value = video.url;
+  document.getElementById('video-category').value = video.category;
+  document.getElementById('add-video-modal').classList.add('active');
+}
+
+function saveVideo(){
+  const title = document.getElementById('video-title').value.trim();
+  const desc = document.getElementById('video-desc').value.trim();
+  const url = document.getElementById('video-url').value.trim();
+  const category = document.getElementById('video-category').value;
+  
+  if(!title || !url){
+    alert('Please enter title and URL');
+    return;
+  }
+  
+  const editId = document.getElementById('add-video-modal').dataset.editId;
+  if(editId){
+    updateVideo(editId, title, desc, url, category);
+  } else {
+    addVideo(title, desc, url, category);
+  }
+  
+  renderVideos();
+  document.getElementById('add-video-modal').classList.remove('active');
+}
+
+function renderVideos(){
+  const grid = document.getElementById('videos-grid');
+  if(!grid) return;
+  
+  grid.innerHTML = '';
+  
+  if(videos.length === 0){
+    grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted);padding:2rem">No videos yet. Click "+ Add Video" to get started!</p>';
+    return;
+  }
+  
+  videos.forEach(video => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.display = 'flex';
+    div.style.flexDirection = 'column';
+    
+    // VIDEO PLAYER
+    const player = document.createElement('div');
+    player.style.position = 'relative';
+    player.style.paddingBottom = '56.25%';
+    player.style.height = '0';
+    player.style.overflow = 'hidden';
+    player.style.borderRadius = '8px';
+    player.style.marginBottom = '1rem';
+    
+    const iframe = document.createElement('iframe');
+    iframe.src = video.url;
+    iframe.style.position = 'absolute';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.borderRadius = '8px';
+    iframe.setAttribute('allowFullscreen', '');
+    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+    
+    player.appendChild(iframe);
+    div.appendChild(player);
+    
+    // TITLE
+    const title = document.createElement('h4');
+    title.textContent = video.title;
+    title.style.margin = '0 0 0.5rem 0';
+    title.style.color = 'var(--primary)';
+    title.style.fontSize = '1rem';
+    div.appendChild(title);
+    
+    // CATEGORY BADGE
+    const badge = document.createElement('span');
+    badge.textContent = '🏷️ ' + video.category.replace('-', ' ');
+    badge.style.display = 'inline-block';
+    badge.style.fontSize = '0.75rem';
+    badge.style.padding = '0.3rem 0.6rem';
+    badge.style.backgroundColor = 'var(--accent)';
+    badge.style.color = 'white';
+    badge.style.borderRadius = '4px';
+    badge.style.marginBottom = '0.5rem';
+    badge.style.fontWeight = '600';
+    div.appendChild(badge);
+    
+    // DESCRIPTION
+    if(video.description){
+      const desc = document.createElement('p');
+      desc.className = 'desc';
+      desc.textContent = video.description;
+      desc.style.margin = '0.5rem 0';
+      desc.style.fontSize = '0.9rem';
+      desc.style.color = 'var(--muted)';
+      desc.style.flex = '1';
+      div.appendChild(desc);
+    }
+    
+    // BUTTONS
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '0.5rem';
+    actions.style.marginTop = '1rem';
+    
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-price';
+    editBtn.textContent = '✏️ Edit';
+    editBtn.type = 'button';
+    editBtn.style.flex = '1';
+    editBtn.addEventListener('click', () => openEditVideoModal(video));
+    actions.appendChild(editBtn);
+    
+    const delBtn = document.createElement('button');
+    delBtn.className = 'edit-price';
+    delBtn.textContent = '🗑️ Delete';
+    delBtn.type = 'button';
+    delBtn.style.color = 'red';
+    delBtn.style.flex = '1';
+    delBtn.addEventListener('click', () => {
+      if(confirm(`Delete "${video.title}"?`)){
+        deleteVideo(video.id);
+        renderVideos();
+      }
+    });
+    actions.appendChild(delBtn);
+    
+    div.appendChild(actions);
+    grid.appendChild(div);
+  });
+}
+
 // INIT
 window.addEventListener('DOMContentLoaded', ()=>{
   // Load current user
@@ -1823,13 +2455,15 @@ window.addEventListener('DOMContentLoaded', ()=>{
     logoDisplay.appendChild(img);
   }
 
-  // Cakes & Products & Cart & Gallery
+  // Cakes & Products & Cart & Gallery & Videos
   loadCakes();
   loadProducts();
   loadGalleryPhotos();
+  loadVideos();
   renderCakeGallery();
   renderProductGallery();
   renderGallery();
+  renderVideos();
   loadCart();
   updateCartUI();
 

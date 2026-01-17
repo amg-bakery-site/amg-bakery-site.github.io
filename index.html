@@ -332,6 +332,40 @@
     </div>
   </div>
 
+  <!-- VIDEO MODAL -->
+  <div class="modal" id="add-video-modal">
+    <div class="modal-content" style="max-width:600px">
+      <span class="modal-close" onclick="document.getElementById('add-video-modal').classList.remove('active')">&times;</span>
+      <h3>Add Video</h3>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Video Title *</span>
+        <input type="text" id="video-title" placeholder="e.g., How to Make Chocolate Cake" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Description</span>
+        <textarea id="video-desc" rows="3" placeholder="Describe your video..." style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px;font-family:inherit"></textarea>
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">YouTube URL or Video Link *</span>
+        <input type="url" id="video-url" placeholder="https://www.youtube.com/watch?v=..." style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+      </label>
+      <label style="display:block;margin-bottom:1rem">
+        <span style="font-weight:600;display:block;margin-bottom:0.3rem">Category</span>
+        <select id="video-category" style="width:100%;padding:0.7rem;border:1px solid var(--border);border-radius:6px">
+          <option value="tutorial">Tutorial</option>
+          <option value="behind-the-scenes">Behind the Scenes</option>
+          <option value="product">Product Showcase</option>
+          <option value="event">Event</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn primary" style="flex:1" onclick="saveVideo()">Add Video</button>
+        <button class="btn outline" style="flex:1" onclick="document.getElementById('add-video-modal').classList.remove('active')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <main>
     <!-- HERO -->
     <section id="home" class="hero">
@@ -449,10 +483,29 @@
       </div>
     </section>
 
+    <!-- VIDEO GALLERY -->
+    <section id="video-gallery" class="section">
+      <div class="container">
+        <h2>🎥 Video Gallery</h2>
+        <p style="text-align:center;color:var(--muted);margin-bottom:1.5rem">Watch our bakery videos and behind-the-scenes content</p>
+        
+        <div style="text-align:center;margin-bottom:2rem">
+          <button class="btn primary" onclick="openAddVideoModal()">+ Add Video</button>
+        </div>
+        
+        <div class="grid" id="videos-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+          <!-- Videos will be populated here -->
+        </div>
+      </div>
+    </section>
+
     <!-- USER PROFILE PAGE -->
     <section id="profile-page" class="section alt-bg" style="display:none">
       <div class="container">
-        <h2>👤 My Account</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h2 style="margin:0">👤 My Account</h2>
+          <button class="btn outline" onclick="goToHome()" style="margin:0">🏠 Back to Home</button>
+        </div>
         
         <div style="max-width:900px;margin:2rem auto">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem">

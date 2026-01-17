@@ -1,0 +1,393 @@
+<!-- TEST PAGE - Image Upload & Video Gallery Testing -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMG Bakery - Testing Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 2rem;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            padding: 2rem;
+        }
+        h1 {
+            color: #1E3A8A;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #1E3A8A;
+        }
+        .test-section h2 {
+            color: #1E3A8A;
+            margin-top: 0;
+            font-size: 1.3rem;
+        }
+        .test-item {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        .status {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 1rem;
+        }
+        .status.ready {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.todo {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.done {
+            background: #d4edda;
+            color: #155724;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        button {
+            background: #1E3A8A;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        button:hover {
+            background: #0d2d7a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
+        }
+        .console-log {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎂 A.M.G. Bakery - Testing & Verification</h1>
+        
+        <div class="test-section">
+            <h2>✅ Bug Fixes Implemented</h2>
+            <div class="success">
+                <strong>All critical image upload issues have been fixed!</strong>
+                <p>Logo, Gallery, Cake, and Product images should now display properly.</p>
+            </div>
+            
+            <div class="test-item">
+                <strong>1. Logo Upload Display</strong>
+                <span class="status done">✅ FIXED</span>
+                <p>Enhanced error handling and user feedback added to <code>saveLogo()</code></p>
+                <button onclick="alert('Navigate to main site and click on the logo to test logo upload')">Test Logo Upload</button>
+            </div>
+            
+            <div class="test-item">
+                <strong>2. Gallery Image Upload Display</strong>
+                <span class="status done">✅ FIXED</span>
+                <p>Fixed image rendering in <code>renderGallery()</code> with proper validation</p>
+                <button onclick="alert('Go to Gallery section and click + Add Gallery Photo')">Test Gallery Upload</button>
+            </div>
+            
+            <div class="test-item">
+                <strong>3. Cake Image Upload Display</strong>
+                <span class="status done">✅ FIXED</span>
+                <p>Updated <code>renderCakeGallery()</code> to validate and display images</p>
+                <button onclick="alert('Add a cake with image in admin dashboard')">Test Cake Upload</button>
+            </div>
+            
+            <div class="test-item">
+                <strong>4. Product Image Upload Display</strong>
+                <span class="status done">✅ FIXED</span>
+                <p>Updated <code>renderProductGallery()</code> to validate and display images</p>
+                <button onclick="alert('Add a product with image in admin dashboard')">Test Product Upload</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎥 New Feature: Video Gallery</h2>
+            <div class="success">
+                <strong>YouTube Video Gallery fully integrated!</strong>
+                <p>Complete video management system with embed support, categorization, and sample data.</p>
+            </div>
+            
+            <div class="test-item">
+                <strong>Video Gallery Section</strong>
+                <span class="status ready">✅ READY</span>
+                <p>New section: "🎥 Video Gallery" appears after Gallery section</p>
+                <p><strong>Scroll down on main page to see it!</strong></p>
+            </div>
+            
+            <div class="test-item">
+                <strong>Add Video Modal</strong>
+                <span class="status ready">✅ READY</span>
+                <p>Click "+ Add Video" to open the video upload modal</p>
+                <p><strong>Fields:</strong> Title, Description, URL, Category</p>
+            </div>
+            
+            <div class="test-item">
+                <strong>YouTube Integration</strong>
+                <span class="status ready">✅ READY</span>
+                <p>Automatically converts YouTube URLs to embed format</p>
+                <p><strong>Supports:</strong> youtube.com/watch?v=... and youtu.be/...</p>
+            </div>
+            
+            <div class="test-item">
+                <strong>Video Categorization</strong>
+                <span class="status ready">✅ READY</span>
+                <p>Videos organized by category with visual badges</p>
+                <p><strong>Categories:</strong> Tutorial, Behind-the-Scenes, Product, Event, Other</p>
+            </div>
+            
+            <div class="test-item">
+                <strong>Video Management</strong>
+                <span class="status ready">✅ READY</span>
+                <p>Each video has Edit and Delete buttons</p>
+                <p><strong>Storage:</strong> All videos saved to localStorage (amg_videos)</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Features Status</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                    <th style="text-align: left; padding: 0.8rem;">Feature</th>
+                    <th style="text-align: center; padding: 0.8rem;">Status</th>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 0.8rem;">User Authentication</td>
+                    <td style="text-align: center; padding: 0.8rem;">✅ Working</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 0.8rem;">Product Management</td>
+                    <td style="text-align: center; padding: 0.8rem;">✅ Working</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 0.8rem;">Image Uploads</td>
+                    <td style="text-align: center; padding: 0.8rem;">✅ FIXED</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 0.8rem;">Video Gallery</td>
+                    <td style="text-align: center; padding: 0.8rem;">✅ NEW</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 0.8rem;">Shopping Cart</td>
+                    <td style="text-align: center; padding: 0.8rem;">✅ Working</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 0.8rem;">Admin Dashboard</td>
+                    <td style="text-align: center; padding: 0.8rem;">✅ Working</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 0.8rem;">Social Media</td>
+                    <td style="text-align: center; padding: 0.8rem;">✅ Working</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 0.8rem;">Mobile Responsive</td>
+                    <td style="text-align: center; padding: 0.8rem;">✅ Working</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Quick Tests</h2>
+            
+            <div class="test-item">
+                <strong>Check Console Logs</strong>
+                <p>Open browser DevTools (F12) → Console tab → Perform image upload to see debug logs</p>
+                <button onclick="testConsoleLogs()">Show Sample Log</button>
+                <div id="console-output" class="console-log" style="display:none;"></div>
+            </div>
+            
+            <div class="test-item">
+                <strong>Test localStorage</strong>
+                <p>Check what's stored in browser localStorage</p>
+                <button onclick="checkLocalStorage()">Check Storage</button>
+                <div id="storage-output" class="console-log" style="display:none;"></div>
+            </div>
+            
+            <div class="test-item">
+                <strong>Verify Image Data</strong>
+                <p>Check if gallery images are properly stored</p>
+                <button onclick="verifyGalleryImages()">Check Gallery Images</button>
+                <div id="image-output" class="console-log" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📚 What's Next (Week 2-3)</h2>
+            <ul style="line-height: 1.8;">
+                <li>Product Categories (Breads, Cakes, Pastries, Coffee)</li>
+                <li>Enhanced Search with Auto-suggestions</li>
+                <li>Order Tracking System</li>
+                <li>Khalti & eSEWA Payment Integration</li>
+                <li>Inventory Management</li>
+                <li>Backend Setup (Node.js/Express or PHP)</li>
+                <li>Database Migration (MongoDB/MySQL)</li>
+                <li>Enhanced Admin Dashboard</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Important Notes:</strong>
+            <ul>
+                <li>All data is stored in browser localStorage (max 5MB)</li>
+                <li>Clearing browser cache will delete all data</li>
+                <li>For production, recommend database backend (MongoDB/MySQL)</li>
+                <li>Enable DevTools to see console logs for debugging</li>
+            </ul>
+        </div>
+
+        <button onclick="window.location.href='https://amg-bakery-site.github.io/'" style="width: 100%; padding: 1rem; font-size: 1.1rem; background: #28a745;">
+            ↩️ Go Back to Main Website
+        </button>
+    </div>
+
+    <script>
+        function testConsoleLogs() {
+            const output = document.getElementById('console-output');
+            const logs = `
+Converting image file to dataURI...
+✓ Image converted. Size: 45000 bytes
+✓ Logo converted. Size: 45000 bytes
+✓ Logo set and saved
+Photo added. Total gallery photos: 5
+Gallery photos count: 5
+✓ Gallery rendered successfully
+✓ Videos loaded successfully
+Video added. Total videos: 1
+✓ Videos rendered
+            `;
+            output.textContent = logs.trim();
+            output.style.display = 'block';
+        }
+
+        function checkLocalStorage() {
+            const output = document.getElementById('storage-output');
+            const items = {};
+            for(let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if(key.startsWith('amg_')) {
+                    try {
+                        const value = localStorage.getItem(key);
+                        const size = (value.length / 1024).toFixed(2);
+                        items[key] = size + ' KB';
+                    } catch(e) {
+                        items[key] = 'Error reading';
+                    }
+                }
+            }
+            
+            let text = 'localStorage Contents:\n\n';
+            for(const key in items) {
+                text += `${key}: ${items[key]}\n`;
+            }
+            
+            const totalSize = Object.values(items).reduce((sum, size) => {
+                return sum + parseFloat(size);
+            }, 0);
+            
+            text += `\nTotal Used: ${totalSize.toFixed(2)} KB / 5000 KB`;
+            
+            output.textContent = text;
+            output.style.display = 'block';
+        }
+
+        function verifyGalleryImages() {
+            const output = document.getElementById('image-output');
+            try {
+                const galleryPhotos = JSON.parse(localStorage.getItem('amg_gallery_photos') || '[]');
+                const cakes = JSON.parse(localStorage.getItem('amg_cakes') || '[]');
+                const products = JSON.parse(localStorage.getItem('amg_products') || '[]');
+                const videos = JSON.parse(localStorage.getItem('amg_videos') || '[]');
+                
+                let text = 'Image & Video Data Verification:\n\n';
+                
+                text += `Gallery Photos: ${galleryPhotos.length} items\n`;
+                galleryPhotos.forEach((p, i) => {
+                    const hasImage = p.image && p.image.startsWith('data:image');
+                    text += `  [${i+1}] ${p.title}: ${hasImage ? '✓ Has Image' : '✗ No Image'}\n`;
+                });
+                
+                text += `\nCakes: ${cakes.length} items\n`;
+                cakes.forEach((c, i) => {
+                    const hasImage = c.image && c.image.startsWith('data:image');
+                    text += `  [${i+1}] ${c.name}: ${hasImage ? '✓ Has Image' : '✗ No Image'}\n`;
+                });
+                
+                text += `\nProducts: ${products.length} items\n`;
+                products.forEach((p, i) => {
+                    const hasImage = p.image && p.image.startsWith('data:image');
+                    text += `  [${i+1}] ${p.name}: ${hasImage ? '✓ Has Image' : '✗ No Image'}\n`;
+                });
+                
+                text += `\nVideos: ${videos.length} items\n`;
+                videos.forEach((v, i) => {
+                    text += `  [${i+1}] ${v.title} (${v.category})\n`;
+                });
+                
+                output.textContent = text;
+            } catch(e) {
+                output.textContent = 'Error reading data: ' + e.message;
+            }
+            output.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
