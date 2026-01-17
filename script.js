@@ -403,14 +403,20 @@ function doAdminLogout(){
 
 // TESTIMONIALS FUNCTIONS
 function openTestimonialModal(){
-  if(!currentUser){ alert('❌ Please login to add a review'); return; }
-  
-  // Pre-fill with logged-in user's name
-  document.getElementById('testimonial-name').value = currentUser.name;
-  document.getElementById('testimonial-name').readOnly = true; // Make name read-only
+  // Clear form fields
   document.getElementById('testimonial-text').value = '';
   currentTestimonialRating = 0;
   document.getElementById('rating-display').textContent = 'Select rating';
+  
+  // If logged in, pre-fill name; otherwise leave blank for manual entry
+  if(currentUser){
+    document.getElementById('testimonial-name').value = currentUser.name;
+    document.getElementById('testimonial-name').readOnly = true;
+  } else {
+    document.getElementById('testimonial-name').value = '';
+    document.getElementById('testimonial-name').readOnly = false;
+  }
+  
   document.getElementById('testimonial-modal').classList.add('active');
 }
 
@@ -420,29 +426,43 @@ function setRating(rating){
 }
 
 function submitTestimonial(){
-  if(!currentUser){ alert('❌ Please login to submit a review'); return; }
-  
+  const name = document.getElementById('testimonial-name').value.trim();
   const text = document.getElementById('testimonial-text').value.trim();
   const rating = currentTestimonialRating;
   
-  if(!text || !rating){ alert('Please fill all fields'); return; }
+  if(!name || !text || !rating){ 
+    alert('⚠️ Please fill all fields (Name, Review, and Rating)'); 
+    return; 
+  }
   
   let testimonials = [];
   try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
   
-  // Always use the logged-in user's name to ensure matching works
-  testimonials.push({ 
-    name: currentUser.name, 
+  // Create review object
+  const review = { 
+    name, 
     text, 
     rating, 
-    date: new Date().toISOString(),
-    userId: currentUser.email // Add userId for extra security
-  });
+    date: new Date().toISOString()
+  };
+  
+  // Add userId if logged in (for edit/delete permission)
+  if(currentUser){
+    review.userId = currentUser.email;
+  }
+  
+  testimonials.push(review);
   
   try {
     localStorage.setItem('amg_testimonials', JSON.stringify(testimonials));
-    alert('✓ Thank you for your review! You can edit or delete it anytime.');
+    alert('✓ Thank you for your review!');
+    
+    // Clear form
     document.getElementById('testimonial-modal').classList.remove('active');
+    document.getElementById('testimonial-name').value = '';
+    document.getElementById('testimonial-text').value = '';
+    document.getElementById('testimonial-name').readOnly = false;
+    
     displayTestimonials();
   } catch(error) {
     if(error.name === 'QuotaExceededError' || error.code === 22) {
@@ -1694,26 +1714,28 @@ function displayTestimonials(){
   let html = '';
   testimonials.forEach((review, idx)=>{
     const stars = '⭐'.repeat(Math.round(review.rating)) + (review.rating % 1 ? '✨' : '');
-    const isOwner = currentUser && currentUser.name.trim().toLowerCase() === review.name.trim().toLowerCase();
+    
+    // Check if current user can edit/delete this review
+    const isOwner = currentUser && currentUser.name.trim().toLowerCase() === review.name.trim().toLowerCase() && review.userId === currentUser.email;
+    const isAnonymousReview = !review.userId; // Reviews without userId are anonymous
     const isAdmin = currentAdmin;
     
-    // Debug log
-    if(currentUser) {
-      console.log(`Review ${idx}: "${review.name}" vs Current: "${currentUser.name}" → isOwner: ${isOwner}`);
-    }
+    // Show edit/delete for: owner (logged in), admin, or anyone (if anonymous + logged in)
+    const canEdit = isOwner;
+    const canDelete = isOwner || isAdmin;
     
     html += `
-      <div style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);position:relative;border-left:4px solid ${isOwner ? '#fbbf24' : '#e5e7eb'}">
+      <div style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);position:relative;border-left:4px solid ${isOwner ? '#fbbf24' : isAnonymousReview ? '#d1d5db' : '#e5e7eb'}">
         <div style="margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:start">
           <span>${stars}</span>
-          ${isOwner ? `<span style="background:#fbbf24;color:#000;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:bold">YOUR REVIEW</span>` : ''}
+          ${isOwner ? `<span style="background:#fbbf24;color:#000;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:bold">✓ YOUR REVIEW</span>` : isAnonymousReview ? `<span style="background:#d1d5db;color:#666;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem">ANONYMOUS</span>` : ''}
         </div>
         <p style="margin:0 0 1rem 0;font-style:italic;color:var(--text)">"${review.text}"</p>
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
           <p style="margin:0;font-weight:600;color:var(--primary)">— ${review.name}</p>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-            ${isOwner ? `<button onclick="editTestimonial(${idx})" style="background:#3b82f6;color:white;border:none;padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;font-size:0.85rem;font-weight:600">✏️ Edit</button>` : ''}
-            ${(isAdmin || isOwner) ? `<button onclick="deleteTestimonial(${idx})" style="background:#ef4444;color:white;border:none;padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;font-size:0.85rem;font-weight:600">🗑️ Delete</button>` : ''}
+            ${canEdit ? `<button onclick="editTestimonial(${idx})" style="background:#3b82f6;color:white;border:none;padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;font-size:0.85rem;font-weight:600;transition:background 0.3s" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">✏️ Edit</button>` : ''}
+            ${canDelete ? `<button onclick="deleteTestimonial(${idx})" style="background:#ef4444;color:white;border:none;padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;font-size:0.85rem;font-weight:600;transition:background 0.3s" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">🗑️ Delete</button>` : ''}
           </div>
         </div>
       </div>
