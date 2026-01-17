@@ -25,6 +25,7 @@
         <a href="#home">Home</a>
         <a href="#cakes">Cakes</a>
         <a href="#basic-items">Products</a>
+        <a href="#custom-cake">Custom Cake</a>
         <a href="#gallery">Gallery</a>
         <a href="#about">About</a>
         <a href="#contact">Contact</a>
@@ -607,6 +608,7 @@
           <!-- Admin Tabs -->
           <div style="display:flex;gap:0.5rem;margin-bottom:2rem;flex-wrap:wrap">
             <button class="btn primary" onclick="showAdminTab('overview')" id="tab-overview">📊 Overview</button>
+            <button class="btn outline" onclick="showAdminTab('custom-cakes')" id="tab-custom-cakes">🎂 Custom Orders</button>
             <button class="btn outline" onclick="showAdminTab('testimonials')" id="tab-testimonials">💬 Testimonials</button>
             <button class="btn outline" onclick="showAdminTab('popular')" id="tab-popular">⭐ Popular Items</button>
             <button class="btn outline" onclick="showAdminTab('orders')" id="tab-orders">📋 Orders</button>
@@ -636,6 +638,13 @@
               </div>
             </div>
             <p style="color:var(--muted)">👉 Use tabs above to manage testimonials, popular items, orders, and customers</p>
+          </div>
+
+          <!-- CUSTOM CAKE ORDERS TAB -->
+          <div id="admin-custom-cakes" style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:none">
+            <h3 style="color:var(--primary);margin-top:0">🎂 Custom Cake Orders</h3>
+            <p style="color:var(--muted);margin-bottom:1rem">Manage custom cake order requests from customers</p>
+            <div id="admin-custom-cakes-list"></div>
           </div>
 
           <!-- TESTIMONIALS TAB -->
@@ -676,6 +685,101 @@
             <div id="admin-sales-history"></div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- CUSTOM CAKE ORDER -->
+    <section id="custom-cake" class="section">
+      <div class="container">
+        <h2>🎂 Custom Cake Order</h2>
+        <p style="text-align:center;color:var(--muted);margin-bottom:2rem">Design your perfect custom cake! Tell us the size, flavor, message, and we'll create something amazing for you.</p>
+        
+        <form id="custom-cake-form" class="order-form" style="max-width:600px;margin:0 auto">
+          <h3>Cake Details</h3>
+          
+          <label>
+            <span>Cake Size *</span>
+            <select id="cake-size" required>
+              <option value="">Select a size</option>
+              <option value="small">Small (4 inches, 2-3 servings) - Rs 500</option>
+              <option value="medium">Medium (6 inches, 4-6 servings) - Rs 800</option>
+              <option value="large">Large (8 inches, 8-10 servings) - Rs 1200</option>
+              <option value="extra-large">Extra Large (10 inches, 12+ servings) - Rs 1800</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Flavor *</span>
+            <select id="cake-flavor" required>
+              <option value="">Select a flavor</option>
+              <option value="chocolate">Chocolate</option>
+              <option value="vanilla">Vanilla</option>
+              <option value="red-velvet">Red Velvet</option>
+              <option value="carrot">Carrot Cake</option>
+              <option value="black-forest">Black Forest</option>
+              <option value="cheesecake">Cheesecake</option>
+              <option value="lemon">Lemon</option>
+              <option value="strawberry">Strawberry</option>
+              <option value="custom">Custom Flavor (describe in notes)</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Frosting *</span>
+            <select id="cake-frosting" required>
+              <option value="">Select frosting</option>
+              <option value="cream-cheese">Cream Cheese</option>
+              <option value="buttercream">Buttercream</option>
+              <option value="chocolate-ganache">Chocolate Ganache</option>
+              <option value="whipped-cream">Whipped Cream</option>
+              <option value="fondant">Fondant</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Message on Cake (Optional)</span>
+            <textarea id="cake-message" rows="2" placeholder="e.g., Happy Birthday Sarah!" maxlength="100"></textarea>
+          </label>
+
+          <label>
+            <span>Reference Image (Optional)</span>
+            <input type="file" id="cake-image" accept="image/*">
+            <small style="color:var(--muted)">Upload a reference image of the cake design you want</small>
+          </label>
+
+          <label>
+            <span>Special Requests</span>
+            <textarea id="cake-requests" rows="3" placeholder="Dietary restrictions, allergies, special decoration requests, etc."></textarea>
+          </label>
+
+          <label>
+            <span>Delivery Date *</span>
+            <input type="date" id="cake-delivery-date" required>
+          </label>
+
+          <label>
+            <span>Your Name *</span>
+            <input type="text" id="cake-cust-name" placeholder="Your name" required>
+          </label>
+
+          <label>
+            <span>Your Phone *</span>
+            <input type="tel" id="cake-cust-phone" placeholder="9848551921" required>
+          </label>
+
+          <label>
+            <span>Delivery Address</span>
+            <textarea id="cake-cust-address" rows="2" placeholder="(Optional for pickup)"></textarea>
+          </label>
+
+          <div style="text-align:center;margin-top:1.5rem">
+            <button type="button" id="send-custom-cake-order" class="btn primary">📮 Submit Custom Cake Request</button>
+          </div>
+
+          <p class="muted small" style="margin-top:1rem;text-align:center">
+            ✓ We'll review your request and call you within 24 hours to confirm and discuss final details
+          </p>
+        </form>
       </div>
     </section>
 

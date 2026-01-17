@@ -201,7 +201,7 @@ function showAdminDashboard(){
 
 function showAdminTab(tab){
   document.querySelectorAll('[id^="admin-"]').forEach(el=> {
-    if(el.id.startsWith('admin-overview') || el.id.startsWith('admin-testimonials') || el.id.startsWith('admin-popular') || el.id.startsWith('admin-orders') || el.id.startsWith('admin-customers') || el.id.startsWith('admin-sales')){
+    if(el.id.startsWith('admin-overview') || el.id.startsWith('admin-custom-cakes') || el.id.startsWith('admin-testimonials') || el.id.startsWith('admin-popular') || el.id.startsWith('admin-orders') || el.id.startsWith('admin-customers') || el.id.startsWith('admin-sales')){
       el.style.display = 'none';
     }
   });
@@ -212,6 +212,10 @@ function showAdminTab(tab){
     document.getElementById('admin-overview').style.display = 'block';
     document.getElementById('tab-overview').classList.add('primary');
     loadAdminOverview();
+  } else if(tab === 'custom-cakes'){
+    document.getElementById('admin-custom-cakes').style.display = 'block';
+    document.getElementById('tab-custom-cakes').classList.add('primary');
+    displayCustomCakeOrders();
   } else if(tab === 'testimonials'){
     document.getElementById('admin-testimonials').style.display = 'block';
     document.getElementById('tab-testimonials').classList.add('primary');
@@ -2587,6 +2591,185 @@ window.addEventListener('DOMContentLoaded', ()=>{
   displayTestimonials();
   displayAboutSection();
   
+  // Custom Cake Orders
+  loadCustomCakeOrders();
+  setupCustomCakeForm();
+  
   // Update auth UI
   updateAuthUI();
 });
+
+// CUSTOM CAKE ORDER FUNCTIONS
+function loadCustomCakeOrders(){
+  try{
+    const stored = localStorage.getItem('amg_custom_cakes');
+    return stored ? JSON.parse(stored) : [];
+  }catch(e){
+    return [];
+  }
+}
+
+function saveCustomCakeOrders(orders){
+  localStorage.setItem('amg_custom_cakes', JSON.stringify(orders));
+}
+
+function setupCustomCakeForm(){
+  const form = document.getElementById('custom-cake-form');
+  if(!form) return;
+
+  const submitBtn = document.getElementById('send-custom-cake-order');
+  if(submitBtn){
+    submitBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      submitCustomCakeOrder();
+    });
+  }
+}
+
+function submitCustomCakeOrder(){
+  const size = document.getElementById('cake-size').value.trim();
+  const flavor = document.getElementById('cake-flavor').value.trim();
+  const frosting = document.getElementById('cake-frosting').value.trim();
+  const message = document.getElementById('cake-message').value.trim();
+  const requests = document.getElementById('cake-requests').value.trim();
+  const deliveryDate = document.getElementById('cake-delivery-date').value;
+  const name = document.getElementById('cake-cust-name').value.trim();
+  const phone = document.getElementById('cake-cust-phone').value.trim();
+  const address = document.getElementById('cake-cust-address').value.trim();
+
+  if(!size || !flavor || !frosting || !deliveryDate || !name || !phone){
+    alert('❌ Please fill all required fields');
+    return;
+  }
+
+  // Handle image upload
+  let imageData = null;
+  const imageFile = document.getElementById('cake-image').files[0];
+  
+  if(imageFile){
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      imageData = e.target.result;
+      saveCustomCakeOrder(size, flavor, frosting, message, requests, deliveryDate, name, phone, address, imageData);
+    };
+    reader.readAsDataURL(imageFile);
+  } else {
+    saveCustomCakeOrder(size, flavor, frosting, message, requests, deliveryDate, name, phone, address, null);
+  }
+}
+
+function saveCustomCakeOrder(size, flavor, frosting, message, requests, deliveryDate, name, phone, address, imageData){
+  const orders = loadCustomCakeOrders();
+  
+  const order = {
+    id: generateCakeId(),
+    size: size,
+    flavor: flavor,
+    frosting: frosting,
+    message: message,
+    requests: requests,
+    deliveryDate: deliveryDate,
+    customerName: name,
+    customerPhone: phone,
+    customerAddress: address,
+    image: imageData,
+    status: 'pending',
+    submittedDate: new Date().toISOString()
+  };
+
+  orders.push(order);
+  saveCustomCakeOrders(orders);
+  
+  // Reset form
+  document.getElementById('custom-cake-form').reset();
+  
+  alert('✓ Custom cake order submitted! We\'ll contact you soon at ' + phone);
+}
+
+function displayCustomCakeOrders(){
+  if(!currentAdmin) return;
+  
+  const orders = loadCustomCakeOrders();
+  const container = document.getElementById('admin-custom-cakes-list');
+  if(!container) return;
+  
+  container.innerHTML = '';
+  
+  if(orders.length === 0){
+    container.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem">No custom cake orders yet</p>';
+    return;
+  }
+
+  orders.forEach(order => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--light-bg);padding:1rem;border-radius:8px;margin-bottom:1rem;border-left:4px solid var(--accent)';
+    
+    let sizeLabel = order.size;
+    if(order.size === 'small') sizeLabel = 'Small (4", 2-3 servings)';
+    else if(order.size === 'medium') sizeLabel = 'Medium (6", 4-6 servings)';
+    else if(order.size === 'large') sizeLabel = 'Large (8", 8-10 servings)';
+    else if(order.size === 'extra-large') sizeLabel = 'Extra Large (10", 12+ servings)';
+
+    const statusColor = order.status === 'completed' ? '#10B981' : order.status === 'in-progress' ? '#F59E0B' : '#EF4444';
+    
+    let html = `
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.8rem">
+        <div>
+          <h4 style="margin:0;color:var(--primary)">🎂 ${order.customerName}</h4>
+          <p style="margin:0.3rem 0;font-size:0.9rem;color:var(--muted)">📞 ${order.customerPhone}</p>
+        </div>
+        <span style="background:${statusColor};color:white;padding:0.3rem 0.6rem;border-radius:4px;font-size:0.85rem;font-weight:600;text-transform:uppercase">${order.status}</span>
+      </div>
+      
+      <div style="background:white;padding:0.8rem;border-radius:6px;margin-bottom:0.8rem;font-size:0.9rem">
+        <p style="margin:0.3rem 0"><strong>Flavor:</strong> ${order.flavor}</p>
+        <p style="margin:0.3rem 0"><strong>Frosting:</strong> ${order.frosting}</p>
+        <p style="margin:0.3rem 0"><strong>Size:</strong> ${sizeLabel}</p>
+        ${order.message ? `<p style="margin:0.3rem 0"><strong>Message:</strong> "${order.message}"</p>` : ''}
+        ${order.requests ? `<p style="margin:0.3rem 0"><strong>Requests:</strong> ${order.requests}</p>` : ''}
+        <p style="margin:0.3rem 0"><strong>Delivery Date:</strong> ${order.deliveryDate}</p>
+        ${order.customerAddress ? `<p style="margin:0.3rem 0"><strong>Address:</strong> ${order.customerAddress}</p>` : ''}
+      </div>
+      
+      ${order.image ? `<div style="margin-bottom:0.8rem"><img src="${order.image}" style="max-width:100%;height:auto;max-height:200px;border-radius:6px" alt="Reference image"></div>` : ''}
+      
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <select id="status-${order.id}" style="padding:0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem">
+          <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+          <option value="in-progress" ${order.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+          <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
+        </select>
+        <button style="padding:0.4rem 0.8rem;background:var(--primary);color:white;border:none;border-radius:4px;cursor:pointer;font-size:0.9rem" onclick="updateCustomCakeStatus('${order.id}')">Update Status</button>
+        <button style="padding:0.4rem 0.8rem;background:#EF4444;color:white;border:none;border-radius:4px;cursor:pointer;font-size:0.9rem" onclick="deleteCustomCakeOrder('${order.id}')">Delete</button>
+      </div>
+    `;
+    
+    div.innerHTML = html;
+    container.appendChild(div);
+  });
+}
+
+function updateCustomCakeStatus(orderId){
+  const orders = loadCustomCakeOrders();
+  const orderIndex = orders.findIndex(o => o.id === orderId);
+  
+  if(orderIndex === -1) return;
+  
+  const newStatus = document.getElementById('status-' + orderId).value;
+  orders[orderIndex].status = newStatus;
+  saveCustomCakeOrders(orders);
+  
+  alert('✓ Status updated');
+  displayCustomCakeOrders();
+}
+
+function deleteCustomCakeOrder(orderId){
+  if(!confirm('Delete this custom cake order?')) return;
+  
+  let orders = loadCustomCakeOrders();
+  orders = orders.filter(o => o.id !== orderId);
+  saveCustomCakeOrders(orders);
+  
+  alert('✓ Order deleted');
+  displayCustomCakeOrders();
+}
