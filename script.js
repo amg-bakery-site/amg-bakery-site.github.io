@@ -1701,13 +1701,13 @@ function displayTestimonials(){
   let testimonials = [];
   try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
   
-  // Add default testimonials if none exist
+  // Add default testimonials if none exist (these are DEMO only, no edit/delete)
   if(testimonials.length === 0){
     testimonials = [
-      {name: 'Ram Sharma', rating: 5, text: 'Best bakery in Surkhet! Fresh cakes every time. Highly recommend! 🎂'},
-      {name: 'Priya Thapa', rating: 5, text: 'Amazing quality and quick delivery. Their chocolate cake is to die for! 😋'},
-      {name: 'Arjun KC', rating: 4.5, text: 'Great variety of products. Love their breads and pastries. Will order again!'},
-      {name: 'Anjali Negi', rating: 5, text: 'Professional service and delicious food. Perfect for parties! 🎉'}
+      {name: 'Ram Sharma', rating: 5, text: 'Best bakery in Surkhet! Fresh cakes every time. Highly recommend! 🎂', isDemo: true},
+      {name: 'Priya Thapa', rating: 5, text: 'Amazing quality and quick delivery. Their chocolate cake is to die for! 😋', isDemo: true},
+      {name: 'Arjun KC', rating: 4.5, text: 'Great variety of products. Love their breads and pastries. Will order again!', isDemo: true},
+      {name: 'Anjali Negi', rating: 5, text: 'Professional service and delicious food. Perfect for parties! 🎉', isDemo: true}
     ];
   }
   
@@ -1715,20 +1715,29 @@ function displayTestimonials(){
   testimonials.forEach((review, idx)=>{
     const stars = '⭐'.repeat(Math.round(review.rating)) + (review.rating % 1 ? '✨' : '');
     
-    // Check if current user can edit/delete this review
-    const isOwner = currentUser && currentUser.name.trim().toLowerCase() === review.name.trim().toLowerCase() && review.userId === currentUser.email;
-    const isAnonymousReview = !review.userId; // Reviews without userId are anonymous
+    // Determine ownership - more lenient matching
+    const isDemo = review.isDemo === true;
+    const isLoggedIn = currentUser !== null && currentUser !== undefined;
+    const nameMatches = currentUser && currentUser.name.trim().toLowerCase() === review.name.trim().toLowerCase();
+    const userIdMatches = review.userId && currentUser && review.userId === currentUser.email;
+    
+    // Owner = name matches if logged in, OR userId matches
+    const isOwner = isLoggedIn && (nameMatches || userIdMatches);
     const isAdmin = currentAdmin;
     
-    // Show edit/delete for: owner (logged in), admin, or anyone (if anonymous + logged in)
-    const canEdit = isOwner;
-    const canDelete = isOwner || isAdmin;
+    // Can edit: only if owner of real reviews (not demo)
+    const canEdit = isOwner && !isDemo;
+    // Can delete: owner of real review, OR admin
+    const canDelete = (isOwner && !isDemo) || isAdmin;
+    
+    // Display logic
+    const isAnonymousReview = !review.userId && !isDemo; // User reviews without userId are anonymous
     
     html += `
       <div style="background:white;padding:1.5rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);position:relative;border-left:4px solid ${isOwner ? '#fbbf24' : isAnonymousReview ? '#d1d5db' : '#e5e7eb'}">
         <div style="margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:start">
           <span>${stars}</span>
-          ${isOwner ? `<span style="background:#fbbf24;color:#000;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:bold">✓ YOUR REVIEW</span>` : isAnonymousReview ? `<span style="background:#d1d5db;color:#666;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem">ANONYMOUS</span>` : ''}
+          ${isOwner ? `<span style="background:#fbbf24;color:#000;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:bold">✓ YOUR REVIEW</span>` : isDemo ? `<span style="background:#10b981;color:white;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:bold">⭐ VERIFIED</span>` : isAnonymousReview ? `<span style="background:#d1d5db;color:#666;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem">ANONYMOUS</span>` : ''}
         </div>
         <p style="margin:0 0 1rem 0;font-style:italic;color:var(--text)">"${review.text}"</p>
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
