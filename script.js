@@ -660,6 +660,46 @@ function editTestimonial(idx){
   displayTestimonials();
 }
 
+function editTestimonial(idx){
+  let testimonials = [];
+  try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
+  
+  if(!testimonials[idx]){
+    alert('❌ Review not found');
+    return;
+  }
+  
+  const review = testimonials[idx];
+  const isOwner = currentUser && currentUser.name === review.name;
+  
+  if(!isOwner){
+    alert('❌ You can only edit your own review');
+    return;
+  }
+  
+  // Show edit modal with current review data
+  const newText = prompt('Edit your review:', review.text);
+  if(newText === null) return; // User cancelled
+  
+  if(!newText.trim()){
+    alert('❌ Review text cannot be empty');
+    return;
+  }
+  
+  // Update the review
+  review.text = newText.trim();
+  if(!review.userId && currentUser){
+    review.userId = currentUser.email; // Add userId if missing
+  }
+  
+  // Save back to localStorage
+  testimonials[idx] = review;
+  localStorage.setItem('amg_testimonials', JSON.stringify(testimonials));
+  
+  alert('✓ Review updated successfully!');
+  displayTestimonials();
+}
+
 function deleteTestimonial(idx){
   let testimonials = [];
   try{ testimonials = JSON.parse(localStorage.getItem('amg_testimonials')) || []; }catch(e){}
@@ -1594,11 +1634,16 @@ function updateCartUI(){
     li.innerHTML = `
       <div>
         <strong>${item.name}</strong><br>
-        <small class="muted">Qty: ${item.qty} × Rs ${item.price}</small>
+        <small class="muted">Price: Rs ${item.price} each</small>
       </div>
       <div style="text-align:right">
-        <div><strong>Rs ${item.qty * item.price}</strong></div>
-        <button class="btn outline small remove" data-id="${item.id}">Remove</button>
+        <div style="margin-bottom:0.5rem;display:flex;gap:0.5rem;align-items:center;justify-content:flex-end">
+          <button class="btn outline small" onclick="updateQty('${item.id}', -1)" style="width:30px;padding:0.3rem">−</button>
+          <input type="number" value="${item.qty}" min="1" data-id="${item.id}" class="qty-input" onchange="setQty('${item.id}', this.value)" style="width:45px;padding:0.3rem;text-align:center;border:1px solid var(--border);border-radius:4px;font-weight:600">
+          <button class="btn outline small" onclick="updateQty('${item.id}', 1)" style="width:30px;padding:0.3rem">+</button>
+        </div>
+        <div style="margin-bottom:0.5rem"><strong>Total: Rs ${item.qty * item.price}</strong></div>
+        <button class="btn outline small remove" data-id="${item.id}" style="background:#ef4444;color:white;border:none">Remove</button>
       </div>
     `;
     list.appendChild(li);
@@ -1607,6 +1652,23 @@ function updateCartUI(){
   document.getElementById('cart-summary').hidden = false;
   const subtotal = cart.reduce((s,i)=>s + i.qty * i.price, 0);
   document.getElementById('cart-subtotal').textContent = `Rs ${subtotal}`;
+}
+
+function updateQty(id, change){
+  const item = cart.find(i=>i.id === id);
+  if(!item) return;
+  item.qty = Math.max(1, item.qty + change);
+  saveCart();
+  updateCartUI();
+}
+
+function setQty(id, newQty){
+  const item = cart.find(i=>i.id === id);
+  if(!item) return;
+  const qty = parseInt(newQty) || 0;
+  item.qty = Math.max(1, qty);
+  saveCart();
+  updateCartUI();
 }
 
 function removeFromCart(id){ cart = cart.filter(i=>i.id!==id); saveCart(); updateCartUI(); }
@@ -2858,13 +2920,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('clear-cart').addEventListener('click', ()=> clearCart());
   document.getElementById('send-order').addEventListener('click', (e)=>{ e.preventDefault(); sendOrder(); });
 
-  // ✅ Keyboard shortcut for admin access: Ctrl+Shift+A
-  document.addEventListener('keydown', (e)=>{
-    if(e.ctrlKey && e.shiftKey && e.key === 'A'){
-      e.preventDefault();
-      openAdminModal();
-    }
-  });
+  // ✅ SECURITY: Removed keyboard shortcut for admin access. Admin login requires proper authentication only.
 
   // Payment method visibility
   const paymentRadios = document.querySelectorAll('input[name="payment"]');
