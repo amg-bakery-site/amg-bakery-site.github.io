@@ -42,9 +42,10 @@
 
       <button id="signup-btn" class="cart-btn" onclick="openRegisterModal()" style="margin-right:0.5rem;background:var(--accent);color:var(--primary)">📝 Sign Up</button>
 
-      <button id="admin-btn" class="cart-btn" onclick="openAdminModal()" style="margin-right:0.5rem;display:none;background:#9333EA;color:white;font-weight:600">⚙️ Admin Login</button>
-
       <button class="cart-btn" id="cart-btn" aria-label="Open cart">🛒 Cart (<span id="cart-count">0</span>)</button>
+      
+      <!-- HIDDEN: Admin button only shown when logged in (removed from header for security) -->
+      <button id="admin-btn" class="cart-btn" onclick="showAdminDashboard()" style="margin-right:0.5rem;display:none;background:#9333EA;color:white;font-weight:600">⚙️ Admin Dashboard</button>
     </div>
   </header>
 
@@ -913,6 +914,7 @@
             <ul id="cart-items" class="cart-list"></ul>
             <div class="cart-summary" id="cart-summary" hidden>
               <p>Subtotal: <strong id="cart-subtotal">Rs 0</strong></p>
+              <button type="button" onclick="document.getElementById('order').scrollIntoView({behavior:'smooth'})" class="btn primary" style="width:100%;margin-top:1rem">🛒 Proceed to Checkout</button>
             </div>
           </div>
 
@@ -1046,10 +1048,10 @@
       <a href="https://www.instagram.com/amgbakery" target="_blank" class="floating-social-link instagram" title="Instagram">
         <span>📷</span>
       </a>
-      <a href="https://wa.me/9779848551921" target="_blank" class="floating-social-link whatsapp" title="WhatsApp">
+      <a href="https://wa.me/9779826542784" target="_blank" class="floating-social-link whatsapp" title="WhatsApp">
         <span>💬</span>
       </a>
-      <a href="https://www.tiktok.com/@amgbakery" target="_blank" class="floating-social-link tiktok" title="TikTok">
+      <a href="https://www.tiktok.com/@manbirdhaulakoti" target="_blank" class="floating-social-link tiktok" title="TikTok">
         <span>🎵</span>
       </a>
       <a href="https://www.youtube.com/@amgbakery" target="_blank" class="floating-social-link youtube" title="YouTube">
@@ -1084,10 +1086,10 @@
             <a href="https://www.instagram.com/amgbakery" target="_blank" class="social-btn" title="Instagram" style="--social-color:#E1306C">
               <span style="font-size:1.2rem">📷</span>
             </a>
-            <a href="https://wa.me/9779848551921" target="_blank" class="social-btn" title="WhatsApp" style="--social-color:#25D366">
+            <a href="https://wa.me/9779826542784" target="_blank" class="social-btn" title="WhatsApp" style="--social-color:#25D366">
               <span style="font-size:1.2rem">💬</span>
             </a>
-            <a href="https://www.tiktok.com/@amgbakery" target="_blank" class="social-btn" title="TikTok" style="--social-color:#000000">
+            <a href="https://www.tiktok.com/@manbirdhaulakoti" target="_blank" class="social-btn" title="TikTok" style="--social-color:#000000">
               <span style="font-size:1.2rem">🎵</span>
             </a>
             <a href="https://www.youtube.com/@amgbakery" target="_blank" class="social-btn" title="YouTube" style="--social-color:#FF0000">

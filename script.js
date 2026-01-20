@@ -394,32 +394,82 @@ function loadAdminPopular(){
   
   const allItems = [...cakes, ...products];
   let popular = [];
+  let popularDescriptions = {};
   try{ popular = JSON.parse(localStorage.getItem('amg_popular_items')) || []; }catch(e){}
+  try{ popularDescriptions = JSON.parse(localStorage.getItem('amg_popular_descriptions')) || {}; }catch(e){}
   
   if(allItems.length === 0){
     document.getElementById('admin-popular-items').innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem">No items available. Add cakes or products first.</p>';
     return;
   }
   
-  let html = '<div style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:1rem;border-left:4px solid var(--accent)">';
-  html += '<p style="margin:0;color:var(--muted);font-size:0.9rem">Total items: ' + allItems.length + ' | Popular: ' + popular.length + '</p>';
+  let html = '<div style="background:var(--light-bg);padding:1rem;border-radius:6px;margin-bottom:1.5rem;border-left:4px solid var(--accent)">';
+  html += '<p style="margin:0;color:var(--primary);font-weight:600">📌 Manage Popular Items</p>';
+  html += '<p style="margin:0.5rem 0 0 0;color:var(--muted);font-size:0.9rem">Check items to mark as popular. Add descriptions for why they\'re popular.</p>';
   html += '</div>';
   
   allItems.forEach(item=>{
     const isPopular = popular.includes(item.id);
+    const desc = popularDescriptions[item.id] || '';
     html += `
-      <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:white;border:2px solid ${isPopular ? 'var(--accent)' : 'var(--border)'};border-radius:6px;margin-bottom:0.8rem;transition:all 0.2s">
-        <input type="checkbox" ${isPopular ? 'checked' : ''} onchange="togglePopularItem('${item.id}', this.checked)" style="cursor:pointer;width:20px;height:20px;accent-color:var(--accent)">
-        <div style="flex:1">
-          <div style="font-weight:600;color:var(--primary)">${item.name}</div>
-          <div style="font-size:0.9rem;color:var(--muted)">Price: Rs ${item.price}</div>
+      <div style="display:grid;grid-template-columns:auto 1fr auto;gap:1rem;padding:1.2rem;background:white;border:2px solid ${isPopular ? 'var(--accent)' : 'var(--border)'};border-radius:6px;margin-bottom:1rem;transition:all 0.2s">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;justify-content:flex-start;padding-top:0.3rem">
+          <input type="checkbox" ${isPopular ? 'checked' : ''} onchange="togglePopularItem('${item.id}', this.checked)" style="cursor:pointer;width:20px;height:20px;accent-color:var(--accent)">
+          <span style="color:${isPopular ? 'var(--accent)' : 'var(--muted)'};font-size:0.7rem;font-weight:600">${isPopular ? '⭐' : '☆'}</span>
         </div>
-        <span style="color:${isPopular ? 'var(--accent)' : 'var(--muted)'};font-weight:600;font-size:0.85rem">${isPopular ? '⭐ POPULAR' : 'Not popular'}</span>
+        <div style="flex:1">
+          <div style="font-weight:600;color:var(--primary);margin-bottom:0.3rem">${item.name}</div>
+          <div style="font-size:0.9rem;color:var(--muted);margin-bottom:0.8rem">Price: Rs ${item.price}</div>
+          ${isPopular ? `
+          <div style="display:flex;gap:0.5rem;align-items:flex-start">
+            <input type="text" placeholder="Why is this popular? (e.g., 'Best seller' or 'Customer favorite')" value="${desc}" onchange="savePopularDescription('${item.id}', this.value)" style="flex:1;padding:0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem">
+          </div>
+          ` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          ${isPopular ? `<button onclick="removeFromPopular('${item.id}')" class="btn outline small" style="background:#ef4444;color:white;border:none;padding:0.5rem 1rem;font-size:0.85rem">Remove</button>` : ''}
+        </div>
       </div>
     `;
   });
   
   document.getElementById('admin-popular-items').innerHTML = html;
+}
+
+function savePopularDescription(itemId, description){
+  // ✅ SECURITY CHECK: Only admin can save descriptions
+  if(!currentAdmin){ alert('❌ Only admin can save descriptions'); return; }
+  
+  let popularDescriptions = {};
+  try{ popularDescriptions = JSON.parse(localStorage.getItem('amg_popular_descriptions')) || {}; }catch(e){}
+  
+  if(description.trim()){
+    popularDescriptions[itemId] = description.trim();
+  } else {
+    delete popularDescriptions[itemId];
+  }
+  
+  localStorage.setItem('amg_popular_descriptions', JSON.stringify(popularDescriptions));
+  displayPopularItems(); // Refresh popular section to show updated description
+}
+
+function removeFromPopular(itemId){
+  // ✅ SECURITY CHECK: Only admin can remove items
+  if(!currentAdmin){ alert('❌ Only admin can remove items'); return; }
+  
+  let popular = [];
+  try{ popular = JSON.parse(localStorage.getItem('amg_popular_items')) || []; }catch(e){}
+  
+  popular = popular.filter(id=> id !== itemId);
+  localStorage.setItem('amg_popular_items', JSON.stringify(popular));
+  
+  let popularDescriptions = {};
+  try{ popularDescriptions = JSON.parse(localStorage.getItem('amg_popular_descriptions')) || {}; }catch(e){}
+  delete popularDescriptions[itemId];
+  localStorage.setItem('amg_popular_descriptions', JSON.stringify(popularDescriptions));
+  
+  displayPopularItems();
+  loadAdminPopular();
 }
 
 function togglePopularItem(itemId, isPopular){
@@ -1687,6 +1737,12 @@ function sendOrder(){
   const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
   const notes = document.getElementById('cust-notes').value.trim();
 
+  // Check if payment method is eSewa - handle separately
+  if(paymentMethod === 'esewa'){
+    processEsewaPayment(name, phone, address, method, notes);
+    return;
+  }
+
   const lines = [];
   lines.push('='.repeat(60));
   lines.push('A.M.G. BAKERY & CAFE - ORDER');
@@ -1701,10 +1757,6 @@ function sendOrder(){
   let paymentDisplay = '';
   if(paymentMethod === 'cod'){
     paymentDisplay = 'CASH ON DELIVERY';
-  } else if(paymentMethod === 'esewa'){
-    paymentDisplay = 'eSEWA PAYMENT';
-    const esewaId = document.getElementById('esewa-id').value.trim();
-    if(esewaId) lines.push(`ESEWA ID: ${esewaId}`);
   } else if(paymentMethod === 'bank'){
     paymentDisplay = 'BANK TRANSFER';
     const bankName = document.getElementById('bank-name').value.trim();
@@ -1751,7 +1803,8 @@ function sendOrder(){
       total: subtotal,
       method: method,
       address: address,
-      phone: phone
+      phone: phone,
+      paymentMethod: paymentMethod
     };
     addOrder(orderData);
   }
@@ -1761,6 +1814,125 @@ function sendOrder(){
   alert('✅ Order sent! Check your email inbox for confirmation.\n\nLoyalty Points: +'+ Math.floor(subtotal/100));
   
   window.location.href = `mailto:ordersamgbakery@gmail.com?subject=${subject}&body=${body}`;
+}
+
+// ✅ eSEWA PAYMENT INTEGRATION
+function processEsewaPayment(name, phone, address, method, notes){
+  const subtotal = cart.reduce((s,i)=>s + i.qty * i.price, 0);
+  
+  // Store order data for eSewa callback
+  const orderData = {
+    customerName: name,
+    customerPhone: phone,
+    address: address,
+    method: method,
+    notes: notes,
+    total: subtotal,
+    items: cart,
+    timestamp: new Date().toISOString()
+  };
+  
+  sessionStorage.setItem('amg_pending_order', JSON.stringify(orderData));
+  
+  // eSEWA Payment Parameters
+  const esewaConfig = {
+    amt: subtotal,
+    psc: 0,
+    pdc: 0,
+    txAmt: subtotal,
+    tAmt: subtotal,
+    pid: `AMG-${Date.now()}`, // Unique transaction ID
+    scd: 'EPAYTEST', // Your eSEWA Merchant Code (update with actual code)
+    su: `${window.location.origin}?payment_success=true`,
+    fu: `${window.location.origin}?payment_failed=true`
+  };
+  
+  // Build eSEWA URL
+  const esewaUrl = 'https://esewa.com.np/epay/main';
+  const params = new URLSearchParams(esewaConfig).toString();
+  
+  // Show loading indicator
+  alert('Redirecting to eSEWA payment gateway...\nPlease do not close this window.');
+  
+  // Redirect to eSEWA
+  window.location.href = `${esewaUrl}?${params}`;
+}
+
+// Handle eSEWA payment callback
+function handleEsewaCallback(){
+  const urlParams = new URLSearchParams(window.location.search);
+  const isSuccess = urlParams.has('payment_success') && urlParams.get('payment_success') === 'true';
+  
+  if(isSuccess){
+    const orderStr = sessionStorage.getItem('amg_pending_order');
+    if(orderStr){
+      const order = JSON.parse(orderStr);
+      
+      // Track sale
+      trackSale(order.items, order.total);
+      
+      // Add order for logged-in users
+      if(currentUser){
+        const orderObj = {
+          items: order.items,
+          total: order.total,
+          method: order.method,
+          address: order.address,
+          phone: order.customerPhone,
+          paymentMethod: 'esewa'
+        };
+        addOrder(orderObj);
+      }
+      
+      // Send confirmation email
+      const lines = [];
+      lines.push('='.repeat(60));
+      lines.push('A.M.G. BAKERY & CAFE - ORDER CONFIRMATION');
+      lines.push('='.repeat(60));
+      lines.push('');
+      lines.push(`✅ PAYMENT RECEIVED VIA eSEWA`);
+      lines.push(`CUSTOMER:  ${order.customerName}`);
+      lines.push(`PHONE:     ${order.customerPhone}`);
+      lines.push(`METHOD:    ${order.method === 'delivery' ? 'DELIVERY' : 'PICKUP'}`);
+      if(order.address) lines.push(`ADDRESS:   ${order.address}`);
+      lines.push('');
+      lines.push('ITEMS ORDERED:');
+      lines.push('-'.repeat(60));
+      
+      order.items.forEach(i=>{
+        const typeLabel = i.type === 'cake' ? '[CAKE]' : '[PRODUCT]';
+        lines.push(`  ${i.name} ${typeLabel}`);
+        lines.push(`  Quantity: ${i.qty}  |  Unit Price: Rs ${i.price}  |  Total: Rs ${i.qty * i.price}`);
+        lines.push('');
+      });
+      
+      lines.push('-'.repeat(60));
+      lines.push(`TOTAL AMOUNT: Rs ${order.total}`.padStart(60));
+      lines.push('PAYMENT STATUS: ✅ COMPLETED (eSEWA)');
+      lines.push('');
+      if(order.notes) lines.push(`SPECIAL NOTES: ${order.notes}`);
+      lines.push('');
+      lines.push('STATUS: Confirmed - Will be prepared soon!');
+      lines.push(`CONTACT: 9848551921 / 9826542784`);
+      lines.push('='.repeat(60));
+      
+      const body = encodeURIComponent(lines.join('\n'));
+      const subject = encodeURIComponent(`✅ ORDER CONFIRMED from ${order.customerName} - A.M.G. Bakery`);
+      
+      clearCart();
+      sessionStorage.removeItem('amg_pending_order');
+      
+      alert('✅ Payment successful!\n\nYour order has been confirmed.\nCheck your email for details.\n\nLoyalty Points: +'+ Math.floor(order.total/100));
+      
+      window.location.href = `mailto:ordersamgbakery@gmail.com?subject=${subject}&body=${body}`;
+    }
+  } else {
+    alert('❌ Payment was cancelled or failed.\n\nPlease try again or use another payment method.');
+    sessionStorage.removeItem('amg_pending_order');
+  }
+  
+  // Clean up URL
+  window.history.replaceState({}, document.title, window.location.pathname);
 }
 
 // LOGIN/REGISTER MODAL FUNCTIONS
@@ -2046,7 +2218,9 @@ function goToOrders(){
 function displayPopularItems(){
   const allItems = [...cakes, ...products];
   let popular = [];
+  let popularDescriptions = {};
   try{ popular = JSON.parse(localStorage.getItem('amg_popular_items')) || []; }catch(e){}
+  try{ popularDescriptions = JSON.parse(localStorage.getItem('amg_popular_descriptions')) || {}; }catch(e){}
   
   // If no items marked as popular, use first 3 items
   let itemsToShow = popular.length > 0 
@@ -2060,13 +2234,15 @@ function displayPopularItems(){
   
   let html = '';
   itemsToShow.forEach(item=>{
+    const popularDesc = popularDescriptions[item.id] || ''; // Get admin-added description
     html += `
       <div style="background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:transform 0.3s" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
         <div style="width:100%;height:200px;background:${item.photo ? `url('${item.photo}') center/cover` : 'linear-gradient(135deg, var(--light-bg), var(--border))'};display:flex;align-items:center;justify-content:center;color:var(--muted)">
           ${!item.photo ? '📷' : ''}
         </div>
         <div style="padding:1rem">
-          <h4 style="margin:0 0 0.5rem 0;color:var(--primary)">${item.name}</h4>
+          <h4 style="margin:0 0 0.5rem 0;color:var(--primary)">⭐ ${item.name}</h4>
+          ${popularDesc ? `<p style="margin:0 0 0.5rem 0;color:var(--accent);font-size:0.9rem;font-weight:600">${popularDesc}</p>` : ''}
           <p style="margin:0 0 1rem 0;color:var(--muted);font-size:0.9rem;min-height:2.1em">${(item.desc || 'Premium bakery item').substring(0, 60)}...</p>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span style="font-size:1.3rem;font-weight:700;color:var(--accent)">Rs ${item.price}</span>
